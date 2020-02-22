@@ -1,0 +1,49 @@
+---
+title: "A Tour of the Tidyverse"
+subtitle: "Data Wrangling and Visualization in R"
+author: "Jake Riley, Alice Walsh"
+date: "March 28, 2020"
+output: 
+  powerpoint_presentation:
+    reference_doc: reference.pptx
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Welcome
+
+Link to RStudioCloud on every slide
+
+## Agenda
+
+## Intro Jake
+
+Link to RStudioCloud on every slide
+
+## Intro Alice
+
+Link to RStudioCloud on every slide
+
+## What is Tidyverse
+
+The tidyverse is an opinionated collection of R packages designed for data science. All packages share an underlying design philosophy, grammar, and data structures.
+
+Install the complete tidyverse with:
+
+```{r eval=FALSE, echo=TRUE}
+install.packages("tidyverse")
+```
+
+
+[https://www.tidyverse.org](https://www.tidyverse.org)
+
+## Intro
+
++ what is `%>%` ?
+
+## Get to RStudioCloud
+
+LINK
+
