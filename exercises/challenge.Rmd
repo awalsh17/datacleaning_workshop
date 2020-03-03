@@ -42,26 +42,32 @@ library(tidyverse)
 
 ```{r}
 # Add code here to load the same data (data_link) with readr::read_csv
+
 # markets_tidy <- read_csv() ## UNCOMMENT and FINISH THE CODE
 ```
 
 ```{r}
 # BONUS: try data.table::fread()
+
 # markets_dt <- data.table::fread() ## UNCOMMENT and FINISH THE CODE
 ```
 
 
 # Challenge two - Inspect your data
 
-The first step is to inspect the data. Use 2 or three commands to look at things like...   
+The first step is to inspect the data. Use two or three commands to look at things like...   
 
 * What is the dimension of the data? 
 * What are the variable/column names?
 * What data type are the variable/columns?
 * How many NA's are there per variable?
+* Is the data "tidy"?
+* What is different about data imported by read.csv and read_csv??
 
 ```{r inspect}
 # Put your code here!
+
+
 
 # Have you tried?
 # skimr::skim()
@@ -72,55 +78,107 @@ The first step is to inspect the data. Use 2 or three commands to look at things
 # DataExplorer::plot_intro() #Note that DataExplorer requires R >= 3.5
 ```
 
-## Adjust defaults of read.csv()
+
+## Adjust defaults of read.csv(), read_csv()
 
 There is some missing data - blank values that we would like to be represented as NA in our dataset.
 
 Also some data has been converted to factors when it should be character.
 
-Let's re-import the data with read.csv() with different options (to make nicer). We want the variables like NEIGHBORHOOD andd ADDRESS to be class `character`. The variable ADDRESS_NOTES should have 39 NA's.
+Let's re-import the data with read.csv() with different options (to make nicer). We want the variables like NEIGHBORHOOD andd ADDRESS to be class `character`. The variable ADDRESS_NOTES should have several NA's.
 
 ```{r reload_data}
 # Fill in the options - add stringsAsFactors, na.strings
 ?read.csv
 
-# Alternatively, use your favorite package to read in the data instead of read.csv()
+# Alternatively, use your favorite package to read in the data 
+# instead of read.csv()
 markets_base <- read.csv(data_link) # add here
 ```
 
+#### --- PAUSE HERE ---- ####
+
 # Challenge three
 ## Clean a character column
-Let's clean up the NEIGHBORHOOD! Use all your favorite commands to look at the values in NEIGHBORHOOD and clean them up. There are some entries with an extra space. There is some inconsistent capitalization.
+Let's clean up the NEIGHBORHOOD! Use all your favorite commands to look at the values in NEIGHBORHOOD and clean them up. 
 
+There might be some entries with an extra space. There is some inconsistent capitalization.
 
 For example, "Center City", "Center city", and "Center City " are all different.
 
 
 ```{r clean_neighborhood}
+# Create a new data.frame called markets_clean that copies the dirty data
+# markets_clean <-  # ADD HERE
+
 # Your code here
+# markets_clean$NEIGHBORHOOD <- # add here
+```
+
+Bonus: What to do with missing values (NAs)? tidyr has a useful function, `replace_na()`
+
+```{r}
+?replace_na
+# Try out replace_na to replace NAs in ACCEPT_SNAP_ACCESS, ACCEPT_FMNP, ACCEPT_PHILLY_FOOD_BUCKS_ with "N"
 
 ```
 
 ## Clean by creating new variables
 
-There are 48 values in the MONTHS variable. It looks like this variable contains information about the dates the farmer's market is open (e.g. "May - October").
+There are 48 values in the MONTHS variable. It looks like this variable contains information about the dates the farmer's market is open (e.g. "May - October", "Open year round").
 
-If you want to plot the number of farmer's markets that are open by month, how will you do it?
+```{r}
+# Currently looks like:
+markets_clean[1:3, c("OBJECTID","MONTHS")]
+```
 
-Tip: Clean up the MONTHS variable and create some new variables. I also decided to create a new data frame that summarized the number of open markets by month.
+If you wanted to plot the number of farmer's markets that are open by month, how would you do it? Currently, there is too much information in this single MONTHS variable.
+
+Tip: Clean up the MONTHS variable and create some new variables. 
+
+You want something like this:
+```
+  OBJECTID start_month end_month
+1        1         May September
+2        2         May   October
+3        3     January  December
+```
+In this example, you have just the months in a standarized format, no dates or other values.
+
+This value, "Wednesdays: June - August, Saturdays: May – October", is particularly painful!
 
 ```{r clean_months}
 # Add code to process data here
+# There are probably hundreds of approaches that could be used
+# Try: separate(), mutate(), lubridate package, stringr::str_trim(), 
 
 ```
 
-```{r plot_by_month}
-# Code to plot markets by month - 
-# Uncomment and Modify the below ggplot2 code or start fresh with your own code
 
-# ggplot(by_month, aes(x = month, y = number)) +
-#   geom_col()
+Bonus: I also decided to create a new data frame that summarized the number of open markets by month.
+
+It will look like this:
+``` r
+by_month[1:5,]
+     month number
+1  January      6
+2 February      6
+3    March      6
+4    April      7
+5      May     26
 ```
+
+
+```{r create_by_month}
+# Code to make a new dataset that summarizes the number of open markets by month
+
+# by_month <- #ADD HERE
+
+```
+
+
+
+#### --- PAUSE HERE ---- ####
 
 # Challenge four - ingest JSON and make a data.frame
 
@@ -131,13 +189,20 @@ To see what JSON looks like, paste: 'https://www.wawa.com/Handlers/LocationByLat
 ```{r}
 library(jsonlite)
 
-wawa_json <- jsonlite::fromJSON('exercises/wawa.json')
+wawa_json <- jsonlite::fromJSON('wawa.json')
 class(wawa_json)
 ```
 
-wawa_json$locations has information on 50 wawa locations. However, you see that this is a nested data frame! How can we get this nice and flat!
-
 ```{r}
+dplyr::glimpse(wawa_json$locations)
+```
+
+
+wawa_json$locations has information on 50 wawa locations. However, you see that this is a nested data frame! amenities, fuelTypes, addresses are not simple list columns.
+
+How can we get this nice and flat!
+
+```{r flatten_json}
 # Put your code here
 # Try:
 # jsonlite::flatten
@@ -146,10 +211,12 @@ wawa_json$locations has information on 50 wawa locations. However, you see that 
 
 ```
 
+#### --- PAUSE HERE ---- ####
+
 ## Extra challenges
 
 That wawa data is still probably not in a good shape to analyze.
-How would we make it tidy? Is it better to keep nested?
+How would we make it tidy? Is it better to keep it nested?
 
 # Bonus data reshape challenge
 
@@ -197,5 +264,37 @@ fake_zillow_long
 # ggplot(zillow_long, aes(x = month, y = price, group = RegionName)) + 
 #   geom_line() + 
 #   facet_wrap(~year)
+```
+
+# Reproducible examples with reprex
+
+https://github.com/tidyverse/reprex
+
+Here are some examples to create a reprex
+```{r}
+library(reprex)
+```
+
+```{r}
+# default is for a github issue
+# copy (ctrl+c) the below lines to the clipboard
+bad_data <- data.frame(money = c(10,20,30,30),
+                       name = c("alice","alice","dave","dave"),
+                       weekday = c("monday","tuesday","monday","tuesday"))
+bad_data
+good_data <- tidyr::spread(bad_data, key=name, value=money)
+good_data
+# then run this
+reprex()
+# can now paste on github or stackoverflow
+```
+
+You don't want to post a question using data you have loaded, but no one else has.
+Hence, creating the dummy `bad_data` data.frame.
+Another method is to just use some slice of your real data if it is shareable.
+
+```{r}
+# try dput()
+dput(df[1:6,1:6])
 ```
 

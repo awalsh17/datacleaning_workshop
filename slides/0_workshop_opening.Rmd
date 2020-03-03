@@ -43,6 +43,29 @@ install.packages("tidyverse")
 
 + what is `%>%` ?
 
+shortcut = ctrl+shift+m
+
+## Schedule
+
+```{r}
+schedule <- data.frame(time = c("2:00-2:15",
+                                "2:15-2:30",
+                                "2:30-2:45",
+                                "2:45-3:30",
+                                "3:30-3:45",
+                                "3:45-4:45",
+                                "4:45-5:00"),
+                       event = c("Welcome and Intros",
+                                 "Intro to data cleaning",
+                                 "Break",
+                                 "Data cleaning exercises",
+                                 "Break",
+                                 "Data visualization",
+                                 "Goodbye!"))
+
+schedule
+```
+
 ## Get to RStudioCloud
 
 LINK

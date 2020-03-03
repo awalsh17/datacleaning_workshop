@@ -35,12 +35,24 @@ Adapted from "An introduction to data cleaning in R" by Edwin de Jonge and Mark 
 + tidyverse: readr, dplyr, tidyr, stringr, purrr
 + janitor
 + skimr
-+ DataExplorer
++ DataExplorer (requires later R version)
 
 
 ## Getting the @#$@! Data into R
 
 What if the raw data cannot even get into R?
+
+## What is tidy data?
+
+https://r4ds.had.co.nz/tidy-data.html
+
+There are three interrelated rules which make a dataset tidy:
+
+1. Each variable must have its own column.
+1. Each observation must have its own row.
+1. Each value must have its own cell.
+
+Usually datasets are organized to make *data entry* easy, but not to make *data analysis* easy.
 
 ## Let's take on some challenges
 
@@ -50,97 +62,21 @@ Instructions and background on the data
 2. Inspect the data - dplyr, skimr, DataExplorer
 3. Fix some dirty fields - dplyr, tidyr, janitor
 4. Ingest other data - JSON
-5. Reshaping data - what is tidy data?
-6. Pivoting - tidyr::gather(), tidyr::spread()
-7. Pivoting - new tidyr `pivot_` functions
-
+5. Pivoting - RIP to tidyr::gather(), tidyr::spread()
+6. Pivoting - new tidyr `pivot_` functions
 
 ## Time to share
 
+![](data_cleaning_r.png){width=60%}
+
 ## How to ask better questions
 
-## Getting the @#$@! Data into R
+a `reprex` is a *repr*oducible *ex*ample.
 
-1. Best case scenario - Rds file
-
-```{r eval=FALSE, echo=TRUE}
-mydata <- readRDS('mydata.Rds')
-```
-
-## Getting the @#$@! Data into R
-
-2. Still good scenario - flat text file (csv, tab-delimited)
-
-```{r eval=FALSE, echo=TRUE}
-mydata <- read.csv('mydata.csv')
-```
-
-
-
-Variations on base R read.csv():
-
-+ `readr::read_csv()` 
-+ `data.table::fread()`
-
-## Getting the @#$@! Data into R
-
-### What's the difference?   
-
-+ stringsAsFactors
-+ "bad" column names
-+ others?
-
-## Getting the @#$@! Data into R
-
-### Other data sources
-
-+ database (local or remote)
-+ JSON
-+ xml
-
-### At the end of the day, we usually want a data frame!!
-
-## First challenge - load our data
-
-Dataset source, [opendataphilly](https://www.opendataphilly.org/dataset/farmers-markets-locations/resource/d23195c1-b7ce-4ae0-a81c-51753d096c6f)
-
-```{r warning=FALSE}
-library(tidyverse)
-```
-
-```{r echo=TRUE}
-markets_tidy <- readr::read_csv("../exercises/Philadelphia_Farmers_Markets.csv", )
-dim(markets_tidy)
-
-markets_base <- read.csv("../exercises/Philadelphia_Farmers_Markets.csv")
-dim(markets_base)
-```
-
-## What is different?
-
-Let's use the glimpse function from dplyr
-```{r}
-glimpse(markets_base)
-glimpse(markets_tidy)
-```
-
-## What is different?
-
-+ Defaults for read.csv left " ", read_csv converted to "NA"
-+ Defaults for read.csv made variables factors, read_csv made character
-
-## Fix any weirdness
-
-+ Column names: read.csv will convert spaces to ".", read_csv will not
-+ Coding of missing values: "na.strings" argument to read.csv
-+ Data type doesn't match: "stringsAsFactors" argument, type.convert() function
-
+https://github.com/tidyverse/reprex
 
 
 ## Recommended reading
-
-![](data_cleaning_r.png){width=60%}
-
 
 - https://learniningwithsckinta.netlify.com/post/2019-10-22_data_wrangling/
 - https://www.tidyverse.org
