@@ -82,3 +82,4 @@ https://github.com/tidyverse/reprex
 - https://www.tidyverse.org
 - https://github.com/rstudio/cheatsheets
 - https://cran.r-project.org/doc/contrib/de_Jonge+van_der_Loo-Introduction_to_data_cleaning_with_R.pdf
+- https://resources.rstudio.com/rstudio-conf-2020/lightning-talk-maya-gans

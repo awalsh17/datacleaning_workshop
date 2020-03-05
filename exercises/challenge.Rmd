@@ -1,6 +1,6 @@
 ---
 title: "The Data Cleaning Gauntlet"
-author: "Alice M Walsh"
+author: "Alice M Walsh, R-Ladies Philly"
 date: "8/2/2018"
 output: html_document
 ---
@@ -189,7 +189,7 @@ To see what JSON looks like, paste: 'https://www.wawa.com/Handlers/LocationByLat
 ```{r}
 library(jsonlite)
 
-wawa_json <- jsonlite::fromJSON('wawa.json')
+wawa_json <- jsonlite::fromJSON(here::here('exercises','wawa.json'))
 class(wawa_json)
 ```
 
@@ -211,38 +211,40 @@ How can we get this nice and flat!
 
 ```
 
-#### --- PAUSE HERE ---- ####
 
 ## Extra challenges
 
 That wawa data is still probably not in a good shape to analyze.
 How would we make it tidy? Is it better to keep it nested?
 
-# Bonus data reshape challenge
+#### --- PAUSE HERE ---- ####
 
-The farmers market data is not a great example to show converting between wide and long data. If you want to practice this, here is an interesting dataset.
+# Challenge five - pivot the "old way"
+
+The farmers market and wawa datasets are not great examples to show converting between wide and long data. If you want to practice this, here is an interesting dataset.
 
 * Zillow makes home prices and other data available on their website: https://www.zillow.com/research/data/
 
 
 ```{r load_widedata}
 zillow_source <- "http://files.zillowstatic.com/research/public/Zip/Zip_MedianListingPrice_AllHomes.csv"
-zillow_wide <- read.csv(zillow_source)
+zillow_wide <- read_csv(zillow_source)
 dim(zillow_wide)
 ```
 
-The data is 10165 rows and 108 columns. Let's filter to just keep Philadelphia data:
+The data is 10,000+ rows and 120+ columns. Let's filter to just keep Philadelphia data:
 
 ```{r filter_zillow}
 # This code uses filter from dplyr package - there are other ways you could do this
 zillow_wide <- filter(zillow_wide, City == "Philadelphia")
+head(zillow_wide[,c(1,2,7:10)])
 ```
 
-This data is wide - there are columns for every month with home prices (e.g. "X2018.01" and "2016.08"). Instead, we want to have one column with the prices and another with the month and year. How can we convert from wide to long?
+This data is wide - there are columns for every month with home prices (e.g. "2010-01" and "2016-08"). Instead, we want to have one column with the prices and another with the month and year. How can we convert from wide to long?
 
 This is roughly what I want `zillow_long` to look like:
 ```{r dummy_df}
-fake_zillow_long <- data_frame(RegionName = c(19143, 19143, 19143, 19143, 19143),
+fake_zillow_long <- tibble(RegionName = c(19143, 19143, 19143, 19143, 19143),
                                City = c("Philadelphia","Philadelphia","Philadelphia","Philadelphia","Philadelphia"),
                                year = c(2010,2010,2010,2010,2010),
                                month = c(1,2,3,4,5),
@@ -252,9 +254,16 @@ fake_zillow_long
 ```
 
 
-```{r reshape_zillow}
-# Create a new dataframe, zillow_long, that contains reshaped data
+```{r reshape_zillow_old}
+# Create a new data frame, zillow_long, that contains reshaped data
+# Try using the tidyr function, gather()
+?gather
 
+# Modify below
+# zillow_long <- gather(zillow_wide, 
+#                       key = "year-month",
+#                       value = "price",
+#                       ?) # add selection of columns here!
 ```
 
 ```{r plot_zillow}
@@ -266,6 +275,46 @@ fake_zillow_long
 #   facet_wrap(~year)
 ```
 
+# Challenge six - pivot the "new way"
+
+```{r reshape_zillow_new}
+# Create a new data frame, zillow_long, that contains reshaped data
+?pivot_longer
+
+# Modify below
+# zillow_long <- pivot_longer(zillow_wide, 
+#                       cols = , # add here!
+#                       names_to = "year-month",
+#                       values_to = "price")
+```
+
+OK, so now the pivot_wider() function is the opposite!
+
+Let's practice by pivoting zillow_long to a new wide table where each month has it's own column. It will look like this (with some additional columns and rows):
+
+```{r dummy_df_2}
+fake_zillow_wide2 <- tibble(RegionName = c(19143, 19143, 19143),
+                            City = c("Philadelphia","Philadelphia","Philadelphia"),
+                            year = c(2010,2011,2012),
+                            price_01 = c(180000, 171400, 164900),
+                            price_02 = c(179999, 169450, 165000),
+                            price_03 = c(179900, 174900, 165000))
+  
+fake_zillow_wide2
+```
+
+```{r back_to_wide}
+# Create a new data frame, zillow_long, that contains reshaped data
+?pivot_wider
+
+# Modify below
+# zillow_wide_2 <- pivot_wider(zillow_long,
+#                       names_from = ,
+#                       values_from = ,
+#                       names_prefix = )
+```
+
+#### --- PAUSE HERE ---- ####
 # Reproducible examples with reprex
 
 https://github.com/tidyverse/reprex
