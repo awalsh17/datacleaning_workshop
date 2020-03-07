@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Intro
+# Introductions
 
 Below I have assembled some data cleaning challenges! The data to clean is all available online. 
 
@@ -58,7 +58,10 @@ library(tidyverse)
 
 # Challenge two - Inspect your data
 
-The first step is to inspect the data. Use two or three commands to look at things like...   
+The first step is to inspect the data. Ask yourself if the data makes sense! Are there values that are impossible, are there missing values, or undesired duplicate values for some columns?
+
+
+Use two or three commands to look at things like...   
 
 * What is the dimension of the data? 
 * What are the variable/column names?
@@ -122,7 +125,8 @@ For example, "Center City", "Center city", and "Center City " are all different.
 # markets_clean$NEIGHBORHOOD <- # add here
 ```
 
-Bonus: What to do with missing values (NAs)? tidyr has a useful function, `replace_na()`
+## Missing values 
+What to do with missing values (NAs)? tidyr has a useful function, `replace_na()`
 
 ```{r}
 ?replace_na
@@ -131,7 +135,7 @@ Bonus: What to do with missing values (NAs)? tidyr has a useful function, `repla
 # Should these variables be logical instead of character?
 ```
 
-## Clean by creating new variables
+## Create new variables from existing variable
 
 There are 48 values in the MONTHS variable. It looks like this variable contains information about the dates the farmer's market is open (e.g. "May - October", "Open year round").
 
@@ -166,6 +170,17 @@ This value, "Wednesdays: June - August, Saturdays: May – October", is particul
 # Try: mutate(), separate(), mutate(), lubridate package, str_to_title()
 # Hints: ?month.name, ?month.abb
 
+# If you had cleaner data, you could simply use separate
+# Here is an example
+easy_data <- tibble(name = c("A","B","C"),
+                    months = c("January - December",
+                               "February - August",
+                               "May - November"))
+
+easy_data %>% 
+  separate(col = months, 
+           into = c("start_month","end_month"),
+           sep = " - ")
 ```
 
 
@@ -211,50 +226,7 @@ markets_base %>%
 
 #### --- PAUSE HERE ---- ####
 
-# Challenge four - ingest JSON and make a data.frame
-
-I have previously downloaded data from wawa.com on locations of wawa stores.
-
-To see what JSON looks like, paste: 'https://www.wawa.com/Handlers/LocationByLatLong.ashx?limit=50&lat=39.9526&long=-75.1652' into your web browser.
-```{r load_more_packages}
-library(jsonlite)
-```
-
-```{r}
-# This code loads the JSON data
-wawa_json <- jsonlite::fromJSON(here::here('exercises','wawa.json'))
-# This returns a list with "fuelCategories" "locations"  
-class(wawa_json)
-```
-
-```{r}
-dplyr::glimpse(wawa_json$locations)
-```
-
-
-wawa_json$locations has information on 50 wawa locations. However, you see that this is a nested data frame! amenities, fuelTypes, addresses are not simple list columns.
-
-How can we get this nice and flat!
-
-```{r flatten_json}
-# Put your code here
-# Try:
-# jsonlite::flatten
-# tidyr::unnest
-# create new data.frames and then rbind, cbind?
-
-# flat_wawa <- #CREATE a flat dataset
-```
-
-
-## Extra challenges
-
-That wawa data is still probably not in a good shape to analyze.  
-How would we make it tidy? Is it better to keep it nested?
-
-#### --- PAUSE HERE ---- ####
-
-# Challenge five - pivot the "old way"
+# Challenge four - pivot the "old way"
 
 The farmers market and wawa datasets are not great examples to show converting between wide and long data. If you want to practice this, here is an interesting dataset.
 
@@ -310,7 +282,7 @@ fake_zillow_long
 #   facet_wrap(~year)
 ```
 
-# Challenge six - pivot the "new way"
+# Challenge five - pivot the "new way"
 
 ```{r reshape_zillow_new}
 # Create a new data frame, zillow_long, that contains reshaped data
@@ -350,6 +322,50 @@ fake_zillow_wide2
 ```
 
 #### --- PAUSE HERE ---- ####
+
+# Challenge six - ingest JSON and make a data.frame
+
+I have previously downloaded data from wawa.com on locations of wawa stores.
+
+To see what JSON looks like, paste: 'https://www.wawa.com/Handlers/LocationByLatLong.ashx?limit=50&lat=39.9526&long=-75.1652' into your web browser.
+```{r load_more_packages}
+library(jsonlite)
+```
+
+```{r}
+# This code loads the JSON data
+wawa_json <- jsonlite::fromJSON(here::here('exercises','wawa.json'))
+# This returns a list with "fuelCategories" "locations"  
+class(wawa_json)
+```
+
+```{r}
+dplyr::glimpse(wawa_json$locations)
+```
+
+
+wawa_json$locations has information on 50 wawa locations. However, you see that this is a nested data frame! amenities, fuelTypes, addresses are not simple list columns.
+
+How can we get this nice and flat!
+
+```{r flatten_json}
+# Put your code here
+# Try:
+# jsonlite::flatten
+# tidyr::unnest
+# create new data.frames and then rbind, cbind?
+
+# flat_wawa <- #CREATE a flat dataset
+```
+
+
+## Extra challenges
+
+That wawa data is still probably not in a good shape to analyze.  
+How would we make it tidy? Is it better to keep it nested?
+
+#### --- PAUSE HERE ---- ####
+
 
 # Reproducible examples with reprex
 

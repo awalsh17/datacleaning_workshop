@@ -93,9 +93,10 @@ table1
 1. Ingest rectangular data - readr vs. base R vs. data.table
 2. Inspect the data - dplyr, skimr, DataExplorer
 3. Fix some dirty fields - dplyr, tidyr, janitor
-4. Ingest other data - JSON
-5. Pivoting - RIP to tidyr::gather(), tidyr::spread()
-6. Pivoting - new tidyr `pivot_` functions
+4. Pivoting - RIP to tidyr::gather(), tidyr::spread()
+5. Pivoting - new tidyr `pivot_` functions
+6. Ingest other data - JSON
+
 
 ## Go to RStudioCloud
 

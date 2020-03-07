@@ -369,8 +369,8 @@ summary {
 </div>
 
 
-<div id="intro" class="section level1">
-<h1>Intro</h1>
+<div id="introductions" class="section level1">
+<h1>Introductions</h1>
 <p>Below I have assembled some data cleaning challenges! The data to clean is all available online.</p>
 <p><em>Some of these were originally used August 2018 for an R-Ladies Philadelphia workshop</em></p>
 <p>In RStudio, you can click a green arrow in the top right corner to run the code chunk.</p>
@@ -407,7 +407,8 @@ library(tidyverse)</code></pre>
 </div>
 <div id="challenge-two---inspect-your-data" class="section level1">
 <h1>Challenge two - Inspect your data</h1>
-<p>The first step is to inspect the data. Use two or three commands to look at things like…</p>
+<p>The first step is to inspect the data. Ask yourself if the data makes sense! Are there values that are impossible, are there missing values, or undesired duplicate values for some columns?</p>
+<p>Use two or three commands to look at things like…</p>
 <ul>
 <li>What is the dimension of the data?</li>
 <li>What are the variable/column names?</li>
@@ -458,14 +459,17 @@ library(tidyverse)</code></pre>
 
 # Your code here
 # markets_clean$NEIGHBORHOOD &lt;- # add here</code></pre>
-<p>Bonus: What to do with missing values (NAs)? tidyr has a useful function, <code>replace_na()</code></p>
+</div>
+<div id="missing-values" class="section level2">
+<h2>Missing values</h2>
+<p>What to do with missing values (NAs)? tidyr has a useful function, <code>replace_na()</code></p>
 <pre class="r"><code>?replace_na
 # Try out replace_na to replace NAs in ACCEPT_SNAP_ACCESS, ACCEPT_FMNP, ACCEPT_PHILLY_FOOD_BUCKS_ with &quot;N&quot;
 
 # Should these variables be logical instead of character?</code></pre>
 </div>
-<div id="clean-by-creating-new-variables" class="section level2">
-<h2>Clean by creating new variables</h2>
+<div id="create-new-variables-from-existing-variable" class="section level2">
+<h2>Create new variables from existing variable</h2>
 <p>There are 48 values in the MONTHS variable. It looks like this variable contains information about the dates the farmer’s market is open (e.g. “May - October”, “Open year round”).</p>
 <p>The data currently looks like this:</p>
 <pre><code>  OBJECTID MONTHS                                                                       
@@ -484,7 +488,25 @@ library(tidyverse)</code></pre>
 <pre class="r"><code># Add code to process data here
 # There are probably hundreds of approaches that could be used
 # Try: mutate(), separate(), mutate(), lubridate package, str_to_title()
-# Hints: ?month.name, ?month.abb</code></pre>
+# Hints: ?month.name, ?month.abb
+
+# If you had cleaner data, you could simply use separate
+# Here is an example
+easy_data &lt;- tibble(name = c(&quot;A&quot;,&quot;B&quot;,&quot;C&quot;),
+                    months = c(&quot;January - December&quot;,
+                               &quot;February - August&quot;,
+                               &quot;May - November&quot;))
+
+easy_data %&gt;% 
+  separate(col = months, 
+           into = c(&quot;start_month&quot;,&quot;end_month&quot;),
+           sep = &quot; - &quot;)</code></pre>
+<pre><code>## # A tibble: 3 x 3
+##   name  start_month end_month
+##   &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;    
+## 1 A     January     December 
+## 2 B     February    August   
+## 3 C     May         November</code></pre>
 <p>Bonus: I also decided to create a new data frame that summarized the number of open markets by month.</p>
 <p>It will look like this:</p>
 <pre><code>     month number
@@ -543,61 +565,8 @@ markets_base %&gt;%
 </div>
 </div>
 </div>
-<div id="challenge-four---ingest-json-and-make-a-data.frame" class="section level1">
-<h1>Challenge four - ingest JSON and make a data.frame</h1>
-<p>I have previously downloaded data from wawa.com on locations of wawa stores.</p>
-<p>To see what JSON looks like, paste: ‘<a href="https://www.wawa.com/Handlers/LocationByLatLong.ashx?limit=50&amp;lat=39.9526&amp;long=-75.1652" class="uri">https://www.wawa.com/Handlers/LocationByLatLong.ashx?limit=50&amp;lat=39.9526&amp;long=-75.1652</a>’ into your web browser.</p>
-<pre class="r"><code>library(jsonlite)</code></pre>
-<pre><code>## 
-## Attaching package: 'jsonlite'</code></pre>
-<pre><code>## The following object is masked from 'package:purrr':
-## 
-##     flatten</code></pre>
-<pre class="r"><code># This code loads the JSON data
-wawa_json &lt;- jsonlite::fromJSON(here::here('exercises','wawa.json'))
-# This returns a list with &quot;fuelCategories&quot; &quot;locations&quot;  
-class(wawa_json)</code></pre>
-<pre><code>## [1] &quot;list&quot;</code></pre>
-<pre class="r"><code>dplyr::glimpse(wawa_json$locations)</code></pre>
-<pre><code>## Observations: 50
-## Variables: 17
-## $ locationID       &lt;chr&gt; &quot;08154&quot;, &quot;08113&quot;, &quot;00086&quot;, &quot;08069&quot;, &quot;08112&quot;, &quot;08093&quot;…
-## $ storeName        &lt;chr&gt; &quot;WAWA, STORE # 8154&quot;, &quot;WAWA, STORE # 8113&quot;, &quot;WAWA, S…
-## $ openType         &lt;chr&gt; &quot;18hours&quot;, &quot;24hours&quot;, &quot;24hours&quot;, &quot;18hours&quot;, &quot;24hours…
-## $ areaManager      &lt;chr&gt; &quot;CHRISTENSEN, RONALD&quot;, &quot;CHRISTENSEN, RONALD&quot;, &quot;HORN,…
-## $ regionalDirector &lt;chr&gt; &quot;ALTEMUS, REBECCA&quot;, &quot;ALTEMUS, REBECCA&quot;, &quot;ALTEMUS, RE…
-## $ telephone        &lt;chr&gt; &quot;(267) 866-7609&quot;, &quot;215) 315-3683&quot;, &quot;215-977-9558&quot;, &quot;…
-## $ isActive         &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL…
-## $ storeOpen        &lt;chr&gt; &quot;06:00:00&quot;, &quot;00:00:00&quot;, &quot;00:00:00&quot;, &quot;05:00:00&quot;, &quot;00:…
-## $ storeClose       &lt;chr&gt; &quot;22:00:00&quot;, &quot;00:00:00&quot;, &quot;00:00:00&quot;, &quot;23:00:00&quot;, &quot;00:…
-## $ open24Hours      &lt;lgl&gt; FALSE, TRUE, TRUE, FALSE, TRUE, TRUE, TRUE, TRUE, FA…
-## $ storeNumber      &lt;chr&gt; &quot;08154&quot;, &quot;08113&quot;, &quot;00086&quot;, &quot;08069&quot;, &quot;08112&quot;, &quot;08093&quot;…
-## $ lastUpdated      &lt;chr&gt; &quot;02/17/2020 5:05 AM&quot;, &quot;02/17/2020 5:05 AM&quot;, &quot;02/17/2…
-## $ amenities        &lt;df[,6]&gt; &lt;data.frame[26 x 6]&gt;
-## $ addresses        &lt;list&gt; [&lt;data.frame[2 x 6]&gt;, &lt;data.frame[2 x 6]&gt;, &lt;data.fr…
-## $ fuelTypes        &lt;list&gt; [&lt;data.frame[0 x 0]&gt;, &lt;data.frame[0 x 0]&gt;, &lt;data.fr…
-## $ hasMenu          &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE…
-## $ addressUrl       &lt;chr&gt; &quot;pa-philadelphia-33-s-16th-st&quot;, &quot;pa-philadelphia-130…</code></pre>
-<p>wawa_json$locations has information on 50 wawa locations. However, you see that this is a nested data frame! amenities, fuelTypes, addresses are not simple list columns.</p>
-<p>How can we get this nice and flat!</p>
-<pre class="r"><code># Put your code here
-# Try:
-# jsonlite::flatten
-# tidyr::unnest
-# create new data.frames and then rbind, cbind?
-
-# flat_wawa &lt;- #CREATE a flat dataset</code></pre>
-<div id="extra-challenges" class="section level2">
-<h2>Extra challenges</h2>
-<p>That wawa data is still probably not in a good shape to analyze.<br />
-How would we make it tidy? Is it better to keep it nested?</p>
-<div id="pause-here---2" class="section level4">
-<h4>— PAUSE HERE —-</h4>
-</div>
-</div>
-</div>
-<div id="challenge-five---pivot-the-old-way" class="section level1">
-<h1>Challenge five - pivot the “old way”</h1>
+<div id="challenge-four---pivot-the-old-way" class="section level1">
+<h1>Challenge four - pivot the “old way”</h1>
 <p>The farmers market and wawa datasets are not great examples to show converting between wide and long data. If you want to practice this, here is an interesting dataset.</p>
 <ul>
 <li>Zillow makes home prices and other data available on their website: <a href="https://www.zillow.com/research/data/" class="uri">https://www.zillow.com/research/data/</a></li>
@@ -652,8 +621,8 @@ fake_zillow_long</code></pre>
 #   geom_line() + 
 #   facet_wrap(~year)</code></pre>
 </div>
-<div id="challenge-six---pivot-the-new-way" class="section level1">
-<h1>Challenge six - pivot the “new way”</h1>
+<div id="challenge-five---pivot-the-new-way" class="section level1">
+<h1>Challenge five - pivot the “new way”</h1>
 <pre class="r"><code># Create a new data frame, zillow_long, that contains reshaped data
 ?pivot_longer
 
@@ -686,8 +655,61 @@ fake_zillow_wide2</code></pre>
 #                       names_from = ,
 #                       values_from = ,
 #                       names_prefix = )</code></pre>
+<div id="pause-here---2" class="section level4">
+<h4>— PAUSE HERE —-</h4>
+</div>
+</div>
+<div id="challenge-six---ingest-json-and-make-a-data.frame" class="section level1">
+<h1>Challenge six - ingest JSON and make a data.frame</h1>
+<p>I have previously downloaded data from wawa.com on locations of wawa stores.</p>
+<p>To see what JSON looks like, paste: ‘<a href="https://www.wawa.com/Handlers/LocationByLatLong.ashx?limit=50&amp;lat=39.9526&amp;long=-75.1652" class="uri">https://www.wawa.com/Handlers/LocationByLatLong.ashx?limit=50&amp;lat=39.9526&amp;long=-75.1652</a>’ into your web browser.</p>
+<pre class="r"><code>library(jsonlite)</code></pre>
+<pre><code>## 
+## Attaching package: 'jsonlite'</code></pre>
+<pre><code>## The following object is masked from 'package:purrr':
+## 
+##     flatten</code></pre>
+<pre class="r"><code># This code loads the JSON data
+wawa_json &lt;- jsonlite::fromJSON(here::here('exercises','wawa.json'))
+# This returns a list with &quot;fuelCategories&quot; &quot;locations&quot;  
+class(wawa_json)</code></pre>
+<pre><code>## [1] &quot;list&quot;</code></pre>
+<pre class="r"><code>dplyr::glimpse(wawa_json$locations)</code></pre>
+<pre><code>## Observations: 50
+## Variables: 17
+## $ locationID       &lt;chr&gt; &quot;08154&quot;, &quot;08113&quot;, &quot;00086&quot;, &quot;08069&quot;, &quot;08112&quot;, &quot;08093&quot;…
+## $ storeName        &lt;chr&gt; &quot;WAWA, STORE # 8154&quot;, &quot;WAWA, STORE # 8113&quot;, &quot;WAWA, S…
+## $ openType         &lt;chr&gt; &quot;18hours&quot;, &quot;24hours&quot;, &quot;24hours&quot;, &quot;18hours&quot;, &quot;24hours…
+## $ areaManager      &lt;chr&gt; &quot;CHRISTENSEN, RONALD&quot;, &quot;CHRISTENSEN, RONALD&quot;, &quot;HORN,…
+## $ regionalDirector &lt;chr&gt; &quot;ALTEMUS, REBECCA&quot;, &quot;ALTEMUS, REBECCA&quot;, &quot;ALTEMUS, RE…
+## $ telephone        &lt;chr&gt; &quot;(267) 866-7609&quot;, &quot;215) 315-3683&quot;, &quot;215-977-9558&quot;, &quot;…
+## $ isActive         &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FAL…
+## $ storeOpen        &lt;chr&gt; &quot;06:00:00&quot;, &quot;00:00:00&quot;, &quot;00:00:00&quot;, &quot;05:00:00&quot;, &quot;00:…
+## $ storeClose       &lt;chr&gt; &quot;22:00:00&quot;, &quot;00:00:00&quot;, &quot;00:00:00&quot;, &quot;23:00:00&quot;, &quot;00:…
+## $ open24Hours      &lt;lgl&gt; FALSE, TRUE, TRUE, FALSE, TRUE, TRUE, TRUE, TRUE, FA…
+## $ storeNumber      &lt;chr&gt; &quot;08154&quot;, &quot;08113&quot;, &quot;00086&quot;, &quot;08069&quot;, &quot;08112&quot;, &quot;08093&quot;…
+## $ lastUpdated      &lt;chr&gt; &quot;02/17/2020 5:05 AM&quot;, &quot;02/17/2020 5:05 AM&quot;, &quot;02/17/2…
+## $ amenities        &lt;df[,6]&gt; &lt;data.frame[26 x 6]&gt;
+## $ addresses        &lt;list&gt; [&lt;data.frame[2 x 6]&gt;, &lt;data.frame[2 x 6]&gt;, &lt;data.fr…
+## $ fuelTypes        &lt;list&gt; [&lt;data.frame[0 x 0]&gt;, &lt;data.frame[0 x 0]&gt;, &lt;data.fr…
+## $ hasMenu          &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE…
+## $ addressUrl       &lt;chr&gt; &quot;pa-philadelphia-33-s-16th-st&quot;, &quot;pa-philadelphia-130…</code></pre>
+<p>wawa_json$locations has information on 50 wawa locations. However, you see that this is a nested data frame! amenities, fuelTypes, addresses are not simple list columns.</p>
+<p>How can we get this nice and flat!</p>
+<pre class="r"><code># Put your code here
+# Try:
+# jsonlite::flatten
+# tidyr::unnest
+# create new data.frames and then rbind, cbind?
+
+# flat_wawa &lt;- #CREATE a flat dataset</code></pre>
+<div id="extra-challenges" class="section level2">
+<h2>Extra challenges</h2>
+<p>That wawa data is still probably not in a good shape to analyze.<br />
+How would we make it tidy? Is it better to keep it nested?</p>
 <div id="pause-here---3" class="section level4">
 <h4>— PAUSE HERE —-</h4>
+</div>
 </div>
 </div>
 <div id="reproducible-examples-with-reprex" class="section level1">

@@ -139,7 +139,8 @@ markets_clean %>% count(NEIGHBORHOOD)
   # mutate(NEIGHBORHOOD = stringr::str_trim(NEIGHBORHOOD)) 
 ```
 
-Bonus: What to do with missing values (NAs)? tidyr has a useful function, `replace_na()`
+## Missing values
+What to do with missing values (NAs)? tidyr has a useful function, `replace_na()`
 
 ```{r}
 # Try out replace_na to replace NAs in ACCEPT_SNAP_ACCESS, ACCEPT_FMNP, ACCEPT_PHILLY_FOOD_BUCKS_ with "N"
@@ -154,7 +155,7 @@ markets_clean <- markets_clean %>%
 table(markets_clean$ACCEPT_FMNP, exclude = NULL)
 ```
 
-## Clean by creating new variables
+## Create new variables from existing variable
 
 ```{r clean_months_one}
 # This is one way... 
@@ -341,66 +342,7 @@ markets_clean %>%
   adorn_title()
 ```
 
-# Challenge four - ingest JSON and make a data.frame
-
-```{r load_json}
-library(jsonlite)
-
-wawa_json <- jsonlite::fromJSON(here::here('exercises','wawa.json'))
-class(wawa_json)
-```
-
-```{r}
-dplyr::glimpse(wawa_json$locations)
-```
-
-```{r flatten_json}
-# One way
-flat_wawa <- wawa_json$locations
-
-# amenitites can get added with simple jsonlite::flatten()
-# dim(flat_wawa$amenities)
-flat_wawa <- flatten(flat_wawa)
-
-# addresses has two rows x 6 cols per row, can use tidyr::unnest()
-# dim(flat_wawa$addresses[[1]])
-flat_wawa <- unnest(flat_wawa, cols = addresses)
-
-# fuelTypes has data frame for locations with gas
-#   description price currency
-# 1    Unleaded 2.419      USD
-# 2        Plus 2.739      USD
-# 3     Premium 2.879      USD
-# 4      Diesel 2.999      USD
-# 5       Super 2.919      USD
-
-flat_wawa <- unnest(flat_wawa, cols = fuelTypes, keep_empty = TRUE)
-
-dim(flat_wawa)
-# Note: could unnest again for loc
-```
-
-## Extra challenges
-
-That wawa data is still probably not in a good shape to analyze.  
-How would we make it tidy?    
-*Can at least remove columns like "currency" and "hasMenu" that have no variation*
-
-Is it better to keep it nested? 
-*In this case, it may be better to work with the data nested or separate into multiple data frames.*
-
-```{r}
-# At least fix the addresses where context="friendly", "physical"
-flat_wawa <- flat_wawa %>% 
-  pivot_wider(names_from = context, values_from = address:loc) %>% 
-  # remove empty columns
-  janitor::remove_empty("cols")
-  
-dim(flat_wawa)
-```
-
-
-# Challenge five - pivot the "old way"
+# Challenge four - pivot the "old way"
 
 ```{r load_widedata}
 zillow_source <- "http://files.zillowstatic.com/research/public/Zip/Zip_MedianListingPrice_AllHomes.csv"
@@ -466,7 +408,7 @@ ggplot(zillow_long, aes(x = month, y = price, group = RegionName)) +
   facet_wrap(~year)
 ```
 
-# Challenge six - pivot the "new way"
+# Challenge five - pivot the "new way"
 
 ```{r reshape_zillow_new}
 # Create a new data frame, zillow_long, that contains reshaped data
@@ -504,5 +446,65 @@ zillow_wide_2 <- pivot_wider(zillow_long,
 
 head(zillow_wide_2)
 ```
+
+# Challenge six - ingest JSON and make a data.frame
+
+```{r load_json}
+library(jsonlite)
+
+wawa_json <- jsonlite::fromJSON(here::here('exercises','wawa.json'))
+class(wawa_json)
+```
+
+```{r}
+dplyr::glimpse(wawa_json$locations)
+```
+
+```{r flatten_json}
+# One way
+flat_wawa <- wawa_json$locations
+
+# amenitites can get added with simple jsonlite::flatten()
+# dim(flat_wawa$amenities)
+flat_wawa <- flatten(flat_wawa)
+
+# addresses has two rows x 6 cols per row, can use tidyr::unnest()
+# dim(flat_wawa$addresses[[1]])
+flat_wawa <- unnest(flat_wawa, cols = addresses)
+
+# fuelTypes has data frame for locations with gas
+#   description price currency
+# 1    Unleaded 2.419      USD
+# 2        Plus 2.739      USD
+# 3     Premium 2.879      USD
+# 4      Diesel 2.999      USD
+# 5       Super 2.919      USD
+
+flat_wawa <- unnest(flat_wawa, cols = fuelTypes, keep_empty = TRUE)
+
+dim(flat_wawa)
+# Note: could unnest again for loc
+```
+
+## Extra challenges
+
+That wawa data is still probably not in a good shape to analyze.  
+How would we make it tidy?    
+*Can at least remove columns like "currency" and "hasMenu" that have no variation*
+
+Is it better to keep it nested? 
+*In this case, it may be better to work with the data nested or separate into multiple data frames.*
+
+```{r}
+# At least fix the addresses where context="friendly", "physical"
+flat_wawa <- flat_wawa %>% 
+  pivot_wider(names_from = context, values_from = address:loc) %>% 
+  # remove empty columns
+  janitor::remove_empty("cols")
+  
+dim(flat_wawa)
+```
+
+
 
 
