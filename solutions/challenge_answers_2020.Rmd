@@ -50,14 +50,6 @@ markets_dt <- data.table::fread(data_link) ## UNCOMMENT and FINISH THE CODE
 
 # Challenge two - Inspect your data
 
-```{r inspect}
-# Here are some useful data inspection functions!
-
-
-# Use lapply to check class or number of NA?
-
-```
-
 Questions:
 
 * What is the dimension of the data? 
@@ -88,43 +80,52 @@ lapply(markets_tidy, function(x) sum(is.na(x)))
 skimr::skim(markets_tidy)
 ```
 
+```{r}
+# This is also cool
+DataExplorer::plot_intro(markets_tidy)
+DataExplorer::plot_intro(markets_base)
+```
+
 * Is the data "tidy"?
-No. Each variable does not have its own column and each value does not have its own cell.
+    + No. Each variable does not have its own column and each value does not have its own cell.
 
 * What is different about data imported by read.csv and read_csv??
 
-+ Defaults for read.csv left " ", read_csv converted to "NA"
-+ Defaults for read.csv made variables factors, read_csv made character
-+ Defaults for read.csv left white space, read_csv trimmed it
-+ Column names: read.csv will convert spaces to ".", read_csv will not
-+ Coding of missing values: "na.strings" argument to read.csv
-+ Data type doesn't match: "stringsAsFactors" argument, type.convert() function
+  + Defaults for read.csv left " ", read_csv converted to "NA"
+  + Defaults for read.csv made variables factors, read_csv made character
+  + Defaults for read.csv left white space, read_csv trimmed it
+  + Column names: read.csv will convert spaces to ".", read_csv will not
+  + Coding of missing values: "na.strings" argument to read.csv
+  + Data type doesn't match: "stringsAsFactors" argument, type.convert() function
 
 ## Adjust defaults of read.csv(), read_csv()
 
 ```{r reload_data}
-# Fill in the options - add stringsAsFactors, na.strings
-# ?read.csv
-
+# using read.csv
 markets_base <- read.csv(data_link, 
                          stringsAsFactors = FALSE, 
                          strip.white = TRUE,
                          na.strings=c("NA","NaN", " ", ""))
-# Alternatively, use your favorite package to read in the data instead of read.csv()
-markets <- read_csv(data_link, na = c("NA","NaN", " ", ""))
+# using read_csv
+markets_tidy <- read_csv(data_link, 
+                         col_types = cols(), # this will suppress col text
+                         trim_ws = TRUE, # default is TRUE
+                         na = c("NA","NaN", " ", ""))
 ```
 
-# Challenge three
+# Challenge three - Fix some dirty fields
+
 ## Clean a character column
 
 ```{r clean_neighborhood}
 # Create a new data.frame called markets_clean that copies the dirty data
-markets_clean <- markets
+markets_clean <- markets_tidy
+
+# See what we have
+unique(markets_clean$NEIGHBORHOOD)
 
 # One way
 markets_clean <- markets_clean %>% 
-  # stringr package str_trim() - don't need if done on import (read_csv)
-  mutate(NEIGHBORHOOD = stringr::str_trim(NEIGHBORHOOD)) %>% 
   # str_to_title - makes title case
   mutate(NEIGHBORHOOD = stringr::str_to_title(NEIGHBORHOOD))
 
@@ -133,6 +134,9 @@ unique(markets_clean$NEIGHBORHOOD)
 # or 
 markets_clean %>% count(NEIGHBORHOOD)
 
+# Note: stringr package str_trim() is very useful!
+# don't need if done on import with read_csv(data, trim_ws = TRUE)
+  # mutate(NEIGHBORHOOD = stringr::str_trim(NEIGHBORHOOD)) 
 ```
 
 Bonus: What to do with missing values (NAs)? tidyr has a useful function, `replace_na()`
@@ -143,7 +147,11 @@ Bonus: What to do with missing values (NAs)? tidyr has a useful function, `repla
 markets_clean <- markets_clean %>%   
   replace_na(list(ACCEPT_SNAP_ACCESS = "N",
                   ACCEPT_FMNP = "N",
-                  ACCEPT_PHILLY_FOOD_BUCKS_ = "N"))
+                  ACCEPT_PHILLY_FOOD_BUCKS_ = "N")) %>% 
+  # I decided to make this logical (True/False)
+  mutate_at(vars(starts_with("ACCEPT_")), list(~.=="Y"))
+
+table(markets_clean$ACCEPT_FMNP, exclude = NULL)
 ```
 
 ## Clean by creating new variables
@@ -160,8 +168,8 @@ all_months_abb <- factor(month.abb, levels= month.abb)
 # This cleanup with pipes (%>%) does several operations
 markets_clean <- markets_clean %>% 
   # Manual clean-up
-  mutate(MONTHS = sub("TBD|Late |end of |Mid-|mid-|middle of |,","", MONTHS)) %>% 
-  mutate(MONTHS = sub("Thanksgiving","November", MONTHS)) %>% 
+  mutate(MONTHS = sub("TBD|Late |end of |Mid-|mid-|middle of |,","", MONTHS),
+         MONTHS = sub("Thanksgiving","November", MONTHS)) %>% 
   # Change all to uppercase
   mutate(MONTHS = str_to_title(MONTHS)) %>% 
   # Search for any months present in MONTHS (abbreviation finds both full and short)
@@ -178,10 +186,11 @@ markets_clean <- markets_clean %>%
   # Replace Inf, -Inf with NA
   mutate_at(vars(starts_with("month_n")), list(~na_if(abs(.), Inf)))
     
-# The last line above "mutate_at" is pretty hard to understand, 
+head(select(markets_clean, OBJECTID, month_n_min, month_n_max))
+# The line above ("mutate_at()") is pretty hard to understand, 
 # here is another way (non-tidyverse) to do it:
-  # markets$month_n_min[is.infinite(markets$month_n_min)] <- NA
-  # markets$month_n_max[is.infinite(markets$month_n_max)] <- NA
+  # markets_tidy$month_n_min[is.infinite(markets_tidy$month_n_min)] <- NA
+  # markets_tidy$month_n_max[is.infinite(markets_tidy$month_n_max)] <- NA
 
 # Likewise the middle chunk (map2) uses some confusing purrr
 # Here is another way to do it:  
@@ -199,14 +208,13 @@ markets_clean <- markets_clean %>%
 ```
 
 ```{r plot_by_month}
-
 # Create a summarization based on the numeric start and end months
-
 by_month <- data.frame(month = all_months,
                        number = sapply(1:12,
                                 function(x) 
                                 sum(markets_clean$month_n_min <= x & markets_clean$month_n_max >= x, 
                                     na.rm = TRUE)))
+
 # Code to plot markets by month
 ggplot(by_month, aes(x = month, y = number)) +
   geom_col()
@@ -216,7 +224,7 @@ ggplot(by_month, aes(x = month, y = number)) +
 ```{r clean_months_two, eval=TRUE}
 # Here is a different way to approach challenge four
 # Uses lubridate
-markets2 <- markets
+markets2 <- markets_tidy
 # unique(markets2$MONTHS)
 
 # split by hyphen or dash...
@@ -274,41 +282,27 @@ markets2$INT_OPEN[is.na(markets2$INT_OPEN)] <- interval("2018-01-01", "2018-12-0
 
 markets_open_count <- as.data.frame(
   rbind(
-    "01" = c(01, sum(
-      ymd("2018-01-01") %within% markets2$INT_OPEN == TRUE
-    ), "2018-01-01"),
-    "02" =  c(02, sum(
-      ymd("2018-02-01") %within% markets2$INT_OPEN == TRUE
-    ), "2018-02-01"),
-    "03" =  c(03, sum(
-      ymd("2018-03-01") %within% markets2$INT_OPEN == TRUE
+    "01" = c(01, sum(ymd("2018-01-01") %within% markets2$INT_OPEN == TRUE), "2018-01-01"),
+    "02" =  c(02, sum(ymd("2018-02-01") %within% markets2$INT_OPEN == TRUE), "2018-02-01"),
+    "03" =  c(03, sum(ymd("2018-03-01") %within% markets2$INT_OPEN == TRUE
     ), "2018-03-01"),
-    "04" =  c(04, sum(
-      ymd("2018-04-01") %within% markets2$INT_OPEN == TRUE
+    "04" =  c(04, sum(ymd("2018-04-01") %within% markets2$INT_OPEN == TRUE
     ), "2018-04-01"),
-    "05" =  c(05, sum(
-      ymd("2018-05-01") %within% markets2$INT_OPEN == TRUE
+    "05" =  c(05, sum(ymd("2018-05-01") %within% markets2$INT_OPEN == TRUE
     ), "2018-05-01"),
-    "06" =  c(06, sum(
-      ymd("2018-06-01") %within% markets2$INT_OPEN == TRUE
+    "06" =  c(06, sum(ymd("2018-06-01") %within% markets2$INT_OPEN == TRUE
     ), "2018-06-01"),
-    "07" =  c(07, sum(
-      ymd("2018-07-01") %within% markets2$INT_OPEN == TRUE
+    "07" =  c(07, sum(ymd("2018-07-01") %within% markets2$INT_OPEN == TRUE
     ), "2018-07-01"),
-    "08" =  c(08, sum(
-      ymd("2018-08-01") %within% markets2$INT_OPEN == TRUE
+    "08" =  c(08, sum(ymd("2018-08-01") %within% markets2$INT_OPEN == TRUE
     ), "2018-08-01"),
-    "09" =  c(09, sum(
-      ymd("2018-09-01") %within% markets2$INT_OPEN == TRUE
+    "09" =  c(09, sum(ymd("2018-09-01") %within% markets2$INT_OPEN == TRUE
     ), "2018-09-01"),
-    "10" =  c(10, sum(
-      ymd("2018-10-01") %within% markets2$INT_OPEN == TRUE
+    "10" =  c(10, sum(ymd("2018-10-01") %within% markets2$INT_OPEN == TRUE
     ), "2018-10-01"),
-    "11" =  c(11, sum(
-      ymd("2018-11-01") %within% markets2$INT_OPEN == TRUE
+    "11" =  c(11, sum(ymd("2018-11-01") %within% markets2$INT_OPEN == TRUE
     ), "2018-11-01"),
-    "12" =  c(12, sum(
-      ymd("2018-12-01") %within% markets2$INT_OPEN == TRUE
+    "12" =  c(12, sum(ymd("2018-12-01") %within% markets2$INT_OPEN == TRUE
     ), "2018-12-01")
   )
 )
@@ -328,7 +322,26 @@ ggplot(markets_open_count, aes(x = month(date, label = TRUE), y = count)) +
   scale_x_discrete(limits = month.abb)
 ```
 
-# Challenge four
+## Bonus: Try the janitor package
+
+The janitor package has some useful functions!
+```{r}
+library(janitor)
+```
+
+Here are some demonstrations on the markets data.
+```{r}
+markets_clean %>% clean_names() %>% names()
+```
+
+```{r}
+# tabyl is cool
+markets_clean %>% 
+  tabyl(NEIGHBORHOOD, ACCEPT_SNAP_ACCESS) %>% 
+  adorn_title()
+```
+
+# Challenge four - ingest JSON and make a data.frame
 
 ```{r load_json}
 library(jsonlite)
@@ -363,6 +376,26 @@ flat_wawa <- unnest(flat_wawa, cols = addresses)
 
 flat_wawa <- unnest(flat_wawa, cols = fuelTypes, keep_empty = TRUE)
 
+dim(flat_wawa)
+# Note: could unnest again for loc
+```
+
+## Extra challenges
+
+That wawa data is still probably not in a good shape to analyze.  
+How would we make it tidy?    
+*Can at least remove columns like "currency" and "hasMenu" that have no variation*
+
+Is it better to keep it nested? 
+*In this case, it may be better to work with the data nested or separate into multiple data frames.*
+
+```{r}
+# At least fix the addresses where context="friendly", "physical"
+flat_wawa <- flat_wawa %>% 
+  pivot_wider(names_from = context, values_from = address:loc) %>% 
+  # remove empty columns
+  janitor::remove_empty("cols")
+  
 dim(flat_wawa)
 ```
 
@@ -420,6 +453,8 @@ zillow_long <- gather(zillow_wide,
   separate(`year-month`, 
            into = c("year","month"), 
            convert = TRUE) #if you want new year and month cols to be numeric
+
+head(zillow_long)
 ```
 
 ```{r plot_zillow}
@@ -453,6 +488,8 @@ zillow_long <- pivot_longer(zillow_wide,
                       values_drop_na = TRUE) %>% 
   separate(`year-month`, 
            into = c("year","month"))
+
+head(zillow_long)
 ```
 
 ```{r back_to_wide}
@@ -464,6 +501,8 @@ zillow_wide_2 <- pivot_wider(zillow_long,
                       names_from = "month",
                       values_from = "price",
                       names_prefix = "price_")
+
+head(zillow_wide_2)
 ```
 
 

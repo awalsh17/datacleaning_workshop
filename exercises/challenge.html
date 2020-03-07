@@ -379,6 +379,7 @@ summary {
 <h1>Challenge one - Ingest rectangular data</h1>
 <p>Philadelphia Farmer’s Markets dataset sourced from <a href="https://www.opendataphilly.org/dataset/farmers-markets-locations/" class="uri">https://www.opendataphilly.org/dataset/farmers-markets-locations/</a></p>
 <p>This first code chunk loads the data using base R <code>read.csv()</code>. You should see new variables appear in your Global Environment.</p>
+<p>The goal of challenge one is to just load a comma-separated value (.csv) dataset.</p>
 <pre class="r"><code>data_link &lt;- 'http://data.phl.opendata.arcgis.com/datasets/0707c1f31e2446e881d680b0a5ee54bc_0.csv'
 markets_base &lt;- read.csv(data_link)</code></pre>
 <pre class="r"><code># Do you want to load some packages here? Maybe tidyverse? 
@@ -428,26 +429,29 @@ library(tidyverse)</code></pre>
 # DataExplorer::plot_intro() #Note that DataExplorer requires R &gt;= 3.5</code></pre>
 <div id="adjust-defaults-of-read.csv-read_csv" class="section level2">
 <h2>Adjust defaults of read.csv(), read_csv()</h2>
-<p>There is some missing data - blank values that we would like to be represented as NA in our dataset.</p>
-<p>Also some data has been converted to factors when it should be character.</p>
-<p>Let’s re-import the data with read.csv() with different options (to make nicer). We want the variables like NEIGHBORHOOD andd ADDRESS to be class <code>character</code>. The variable ADDRESS_NOTES should have several NA’s.</p>
-<pre class="r"><code># Fill in the options - add stringsAsFactors, na.strings
+<p>You will have noticed some differences above… one of the ways to make your life easier when working with a new dataset is to do some of the cleaning when you load the data.</p>
+<p>However, it is important that you understand what is happening behind the scenes!</p>
+<p>Let’s re-import the data with read.csv() and read_csv() using some additional parameters.</p>
+<pre class="r"><code># Read some of the documentation
 ?read.csv
+?read_csv
 
-# Alternatively, use your favorite package to read in the data 
-# instead of read.csv()
-markets_base &lt;- read.csv(data_link) # add here</code></pre>
+# markets_base &lt;- read.csv(data_link,  # UNCOMMENT AND add here
+#                          stringsAsFactors = ,
+#                          na.strings = ,
+#                          strip.white = ) 
+
+# markets_tidy &lt;- read_csv(data_link, # Add) # UNCOMMENT AND add here</code></pre>
 <div id="pause-here--" class="section level4">
 <h4>— PAUSE HERE —-</h4>
 </div>
 </div>
 </div>
-<div id="challenge-three" class="section level1">
-<h1>Challenge three</h1>
+<div id="challenge-three---fix-some-dirty-fields" class="section level1">
+<h1>Challenge three - Fix some dirty fields</h1>
 <div id="clean-a-character-column" class="section level2">
 <h2>Clean a character column</h2>
 <p>Let’s clean up the NEIGHBORHOOD! Use all your favorite commands to look at the values in NEIGHBORHOOD and clean them up.</p>
-<p>There might be some entries with an extra space. There is some inconsistent capitalization.</p>
 <p>For example, “Center City”, “Center city”, and “Center City” are all different.</p>
 <pre class="r"><code># Create a new data.frame called markets_clean that copies the dirty data
 # markets_clean &lt;-  # ADD HERE
@@ -456,17 +460,17 @@ markets_base &lt;- read.csv(data_link) # add here</code></pre>
 # markets_clean$NEIGHBORHOOD &lt;- # add here</code></pre>
 <p>Bonus: What to do with missing values (NAs)? tidyr has a useful function, <code>replace_na()</code></p>
 <pre class="r"><code>?replace_na
-# Try out replace_na to replace NAs in ACCEPT_SNAP_ACCESS, ACCEPT_FMNP, ACCEPT_PHILLY_FOOD_BUCKS_ with &quot;N&quot;</code></pre>
+# Try out replace_na to replace NAs in ACCEPT_SNAP_ACCESS, ACCEPT_FMNP, ACCEPT_PHILLY_FOOD_BUCKS_ with &quot;N&quot;
+
+# Should these variables be logical instead of character?</code></pre>
 </div>
 <div id="clean-by-creating-new-variables" class="section level2">
 <h2>Clean by creating new variables</h2>
 <p>There are 48 values in the MONTHS variable. It looks like this variable contains information about the dates the farmer’s market is open (e.g. “May - October”, “Open year round”).</p>
 <p>The data currently looks like this:</p>
-<pre><code># A tibble: 3 x 2
-  OBJECTID MONTHS                                                                                       
-     &lt;dbl&gt; &lt;chr&gt;                                                                                        
-1        1 May - September                                                                              
-2        2 May - October                                                                                
+<pre><code>  OBJECTID MONTHS                                                                       
+1        1 May - September    
+2        2 May - October                           
 3        3 Tues- June 4th - November 26th; Sat- Year round: 9am - 3pm (May - end of November); 10am - 2…</code></pre>
 <p>If you wanted to plot the number of farmer’s markets that are open by month, how would you do it? Currently, there is too much information in this single MONTHS variable.</p>
 <p>Tip: Clean up the MONTHS variable and create some new variables.</p>
@@ -479,11 +483,11 @@ markets_base &lt;- read.csv(data_link) # add here</code></pre>
 <p>This value, “Wednesdays: June - August, Saturdays: May – October”, is particularly painful!</p>
 <pre class="r"><code># Add code to process data here
 # There are probably hundreds of approaches that could be used
-# Try: separate(), mutate(), lubridate package, stringr::str_trim(), </code></pre>
+# Try: mutate(), separate(), mutate(), lubridate package, str_to_title()
+# Hints: ?month.name, ?month.abb</code></pre>
 <p>Bonus: I also decided to create a new data frame that summarized the number of open markets by month.</p>
 <p>It will look like this:</p>
-<pre class="r"><code>by_month[1:5,]
-     month number
+<pre><code>     month number
 1  January      6
 2 February      6
 3    March      6
@@ -492,6 +496,48 @@ markets_base &lt;- read.csv(data_link) # add here</code></pre>
 <pre class="r"><code># Code to make a new dataset that summarizes the number of open markets by month
 
 # by_month &lt;- #ADD HERE</code></pre>
+</div>
+<div id="bonus-try-the-janitor-package" class="section level2">
+<h2>Bonus: Try the janitor package</h2>
+<p>The janitor package has some useful functions!</p>
+<pre class="r"><code>library(janitor)</code></pre>
+<pre><code>## 
+## Attaching package: 'janitor'</code></pre>
+<pre><code>## The following objects are masked from 'package:stats':
+## 
+##     chisq.test, fisher.test</code></pre>
+<p>Here are some demonstrations on the markets data.</p>
+<pre class="r"><code>markets_base %&gt;% clean_names() %&gt;% names()</code></pre>
+<pre><code>##  [1] &quot;x&quot;                        &quot;y&quot;                       
+##  [3] &quot;objectid&quot;                 &quot;neighborhood&quot;            
+##  [5] &quot;name&quot;                     &quot;address&quot;                 
+##  [7] &quot;address_notes&quot;            &quot;zip&quot;                     
+##  [9] &quot;day&quot;                      &quot;time&quot;                    
+## [11] &quot;months&quot;                   &quot;accept_snap_access&quot;      
+## [13] &quot;accept_fmnp&quot;              &quot;accept_philly_food_bucks&quot;
+## [15] &quot;major_bus_subway_routes&quot;</code></pre>
+<pre class="r"><code># tabyl is cool
+markets_base %&gt;% 
+  tabyl(NEIGHBORHOOD, ACCEPT_SNAP_ACCESS) %&gt;% 
+  adorn_title()</code></pre>
+<pre><code>##                                      ACCEPT_SNAP_ACCESS     
+##                         NEIGHBORHOOD                 V1 Y Y 
+##  Bridesburg/Kensington/Port Richmond                  0 2  0
+##                          Center city                  1 0  0
+##                          Center City                  2 3  1
+##            Germantown/ Chestnut Hill                  1 3  0
+##                         Lower North                   1 0  0
+##                                North                  0 8  0
+##                            Northeast                  0 3  0
+##                            Northwest                  0 1  0
+##                           Northwest                   1 1  0
+##                       Olney/Oak Lane                  0 1  0
+##                        Penns Landing                  0 1  0
+##                 Roxborough/ Manayunk                  1 1  0
+##                                South                  1 4  0
+##                            Southwest                  0 1  1
+##                                 West                  0 6  0
+##                                West                   1 4  0</code></pre>
 <div id="pause-here---1" class="section level4">
 <h4>— PAUSE HERE —-</h4>
 </div>
@@ -507,7 +553,9 @@ markets_base &lt;- read.csv(data_link) # add here</code></pre>
 <pre><code>## The following object is masked from 'package:purrr':
 ## 
 ##     flatten</code></pre>
-<pre class="r"><code>wawa_json &lt;- jsonlite::fromJSON(here::here('exercises','wawa.json'))
+<pre class="r"><code># This code loads the JSON data
+wawa_json &lt;- jsonlite::fromJSON(here::here('exercises','wawa.json'))
+# This returns a list with &quot;fuelCategories&quot; &quot;locations&quot;  
 class(wawa_json)</code></pre>
 <pre><code>## [1] &quot;list&quot;</code></pre>
 <pre class="r"><code>dplyr::glimpse(wawa_json$locations)</code></pre>
@@ -536,10 +584,13 @@ class(wawa_json)</code></pre>
 # Try:
 # jsonlite::flatten
 # tidyr::unnest
-# create new data.frames and then rbind, cbind?</code></pre>
+# create new data.frames and then rbind, cbind?
+
+# flat_wawa &lt;- #CREATE a flat dataset</code></pre>
 <div id="extra-challenges" class="section level2">
 <h2>Extra challenges</h2>
-<p>That wawa data is still probably not in a good shape to analyze. How would we make it tidy? Is it better to keep it nested?</p>
+<p>That wawa data is still probably not in a good shape to analyze.<br />
+How would we make it tidy? Is it better to keep it nested?</p>
 <div id="pause-here---2" class="section level4">
 <h4>— PAUSE HERE —-</h4>
 </div>

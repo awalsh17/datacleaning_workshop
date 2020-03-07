@@ -17,12 +17,15 @@ Below I have assembled some data cleaning challenges! The data to clean is all a
 
 In RStudio, you can click a green arrow in the top right corner to run the code chunk. 
 
+
 # Challenge one - Ingest rectangular data
 
 Philadelphia Farmer's Markets 
 dataset sourced from https://www.opendataphilly.org/dataset/farmers-markets-locations/
 
 This first code chunk loads the data using base R `read.csv()`. You should see new variables appear in your Global Environment. 
+
+The goal of challenge one is to just load a comma-separated value (.csv) dataset.
 
 ```{r get_data}
 data_link <- 'http://data.phl.opendata.arcgis.com/datasets/0707c1f31e2446e881d680b0a5ee54bc_0.csv'
@@ -81,28 +84,32 @@ The first step is to inspect the data. Use two or three commands to look at thin
 
 ## Adjust defaults of read.csv(), read_csv()
 
-There is some missing data - blank values that we would like to be represented as NA in our dataset.
+You will have noticed some differences above... one of the ways to make your life easier when working with a new dataset is to do some of the cleaning when you load the data.
 
-Also some data has been converted to factors when it should be character.
+However, it is important that you understand what is happening behind the scenes!
 
-Let's re-import the data with read.csv() with different options (to make nicer). We want the variables like NEIGHBORHOOD andd ADDRESS to be class `character`. The variable ADDRESS_NOTES should have several NA's.
+Let's re-import the data with read.csv() and read_csv() using some additional parameters.
 
 ```{r reload_data}
-# Fill in the options - add stringsAsFactors, na.strings
+# Read some of the documentation
 ?read.csv
+?read_csv
 
-# Alternatively, use your favorite package to read in the data 
-# instead of read.csv()
-markets_base <- read.csv(data_link) # add here
+# markets_base <- read.csv(data_link,  # UNCOMMENT AND add here
+#                          stringsAsFactors = ,
+#                          na.strings = ,
+#                          strip.white = ) 
+
+# markets_tidy <- read_csv(data_link, # Add) # UNCOMMENT AND add here
 ```
 
 #### --- PAUSE HERE ---- ####
 
-# Challenge three
-## Clean a character column
-Let's clean up the NEIGHBORHOOD! Use all your favorite commands to look at the values in NEIGHBORHOOD and clean them up. 
+# Challenge three - Fix some dirty fields
 
-There might be some entries with an extra space. There is some inconsistent capitalization.
+## Clean a character column
+
+Let's clean up the NEIGHBORHOOD! Use all your favorite commands to look at the values in NEIGHBORHOOD and clean them up. 
 
 For example, "Center City", "Center city", and "Center City " are all different.
 
@@ -121,6 +128,7 @@ Bonus: What to do with missing values (NAs)? tidyr has a useful function, `repla
 ?replace_na
 # Try out replace_na to replace NAs in ACCEPT_SNAP_ACCESS, ACCEPT_FMNP, ACCEPT_PHILLY_FOOD_BUCKS_ with "N"
 
+# Should these variables be logical instead of character?
 ```
 
 ## Clean by creating new variables
@@ -130,11 +138,9 @@ There are 48 values in the MONTHS variable. It looks like this variable contains
 The data currently looks like this:
 
 ```
-# A tibble: 3 x 2
-  OBJECTID MONTHS                                                                                       
-     <dbl> <chr>                                                                                        
-1        1 May - September                                                                              
-2        2 May - October                                                                                
+  OBJECTID MONTHS                                                                       
+1        1 May - September    
+2        2 May - October                           
 3        3 Tues- June 4th - November 26th; Sat- Year round: 9am - 3pm (May - end of November); 10am - 2…
 ```
 
@@ -143,6 +149,7 @@ If you wanted to plot the number of farmer's markets that are open by month, how
 Tip: Clean up the MONTHS variable and create some new variables. 
 
 You want something like this:
+
 ```
   OBJECTID start_month end_month
 1        1         May September
@@ -156,7 +163,8 @@ This value, "Wednesdays: June - August, Saturdays: May – October", is particul
 ```{r clean_months}
 # Add code to process data here
 # There are probably hundreds of approaches that could be used
-# Try: separate(), mutate(), lubridate package, stringr::str_trim(), 
+# Try: mutate(), separate(), mutate(), lubridate package, str_to_title()
+# Hints: ?month.name, ?month.abb
 
 ```
 
@@ -164,8 +172,8 @@ This value, "Wednesdays: June - August, Saturdays: May – October", is particul
 Bonus: I also decided to create a new data frame that summarized the number of open markets by month.
 
 It will look like this:
-``` r
-by_month[1:5,]
+
+```
      month number
 1  January      6
 2 February      6
@@ -182,7 +190,24 @@ by_month[1:5,]
 
 ```
 
+## Bonus: Try the janitor package
 
+The janitor package has some useful functions!
+```{r}
+library(janitor)
+```
+
+Here are some demonstrations on the markets data.
+```{r}
+markets_base %>% clean_names() %>% names()
+```
+
+```{r results='markup'}
+# tabyl is cool
+markets_base %>% 
+  tabyl(NEIGHBORHOOD, ACCEPT_SNAP_ACCESS) %>% 
+  adorn_title()
+```
 
 #### --- PAUSE HERE ---- ####
 
@@ -191,11 +216,14 @@ by_month[1:5,]
 I have previously downloaded data from wawa.com on locations of wawa stores.
 
 To see what JSON looks like, paste: 'https://www.wawa.com/Handlers/LocationByLatLong.ashx?limit=50&lat=39.9526&long=-75.1652' into your web browser.
+```{r load_more_packages}
+library(jsonlite)
+```
 
 ```{r}
-library(jsonlite)
-
+# This code loads the JSON data
 wawa_json <- jsonlite::fromJSON(here::here('exercises','wawa.json'))
+# This returns a list with "fuelCategories" "locations"  
 class(wawa_json)
 ```
 
@@ -215,6 +243,7 @@ How can we get this nice and flat!
 # tidyr::unnest
 # create new data.frames and then rbind, cbind?
 
+# flat_wawa <- #CREATE a flat dataset
 ```
 
 
