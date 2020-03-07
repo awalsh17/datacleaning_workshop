@@ -1,7 +1,7 @@
 ---
 title: "The Data Cleaning Gauntlet"
 author: "Alice M Walsh, R-Ladies Philly"
-date: "8/2/2018"
+date: "3/28/2020"
 output: html_document
 ---
 
@@ -127,9 +127,15 @@ Bonus: What to do with missing values (NAs)? tidyr has a useful function, `repla
 
 There are 48 values in the MONTHS variable. It looks like this variable contains information about the dates the farmer's market is open (e.g. "May - October", "Open year round").
 
-```{r}
-# Currently looks like:
-markets_clean[1:3, c("OBJECTID","MONTHS")]
+The data currently looks like this:
+
+```
+# A tibble: 3 x 2
+  OBJECTID MONTHS                                                                                       
+     <dbl> <chr>                                                                                        
+1        1 May - September                                                                              
+2        2 May - October                                                                                
+3        3 Tues- June 4th - November 26th; Sat- Year round: 9am - 3pm (May - end of November); 10am - 2…
 ```
 
 If you wanted to plot the number of farmer's markets that are open by month, how would you do it? Currently, there is too much information in this single MONTHS variable.
@@ -214,7 +220,7 @@ How can we get this nice and flat!
 
 ## Extra challenges
 
-That wawa data is still probably not in a good shape to analyze.
+That wawa data is still probably not in a good shape to analyze.  
 How would we make it tidy? Is it better to keep it nested?
 
 #### --- PAUSE HERE ---- ####
@@ -228,7 +234,7 @@ The farmers market and wawa datasets are not great examples to show converting b
 
 ```{r load_widedata}
 zillow_source <- "http://files.zillowstatic.com/research/public/Zip/Zip_MedianListingPrice_AllHomes.csv"
-zillow_wide <- read_csv(zillow_source)
+zillow_wide <- read_csv(zillow_source, col_types = cols())
 dim(zillow_wide)
 ```
 
@@ -315,6 +321,7 @@ fake_zillow_wide2
 ```
 
 #### --- PAUSE HERE ---- ####
+
 # Reproducible examples with reprex
 
 https://github.com/tidyverse/reprex
@@ -324,19 +331,22 @@ Here are some examples to create a reprex
 library(reprex)
 ```
 
+
+Copy (ctrl+c) the below lines to the clipboard
+
 ```{r}
 # default is for a github issue
-# copy (ctrl+c) the below lines to the clipboard
 bad_data <- data.frame(money = c(10,20,30,30),
                        name = c("alice","alice","dave","dave"),
                        weekday = c("monday","tuesday","monday","tuesday"))
 bad_data
 good_data <- tidyr::spread(bad_data, key=name, value=money)
 good_data
-# then run this
-reprex()
-# can now paste on github or stackoverflow
 ```
+
+Then run `reprex()`
+
+You can now paste on github or stackoverflow - try it!
 
 You don't want to post a question using data you have loaded, but no one else has.
 Hence, creating the dummy `bad_data` data.frame.
@@ -344,6 +354,6 @@ Another method is to just use some slice of your real data if it is shareable.
 
 ```{r}
 # try dput()
-dput(df[1:6,1:6])
+dput(iris[1:5,1:5])
 ```
 

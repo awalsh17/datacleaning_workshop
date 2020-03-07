@@ -13,40 +13,12 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ## Welcome
-*Can use a different ppt template! This is draft!*
+*Can use a different ppt template! This is a draft!*
+
+
 Link to RStudioCloud on every slide
 
 ## Agenda
-
-## Intro Jake
-
-Link to RStudioCloud on every slide
-
-## Intro Alice
-
-Link to RStudioCloud on every slide
-
-## What is Tidyverse
-
-The tidyverse is an opinionated collection of R packages designed for data science. All packages share an underlying design philosophy, grammar, and data structures.
-
-Install the complete tidyverse with:
-
-```{r eval=FALSE, echo=TRUE}
-install.packages("tidyverse")
-```
-
-
-[https://www.tidyverse.org](https://www.tidyverse.org)
-
-## Intro
-
-+ what is `%>%` ?
-
-shortcut = ctrl+shift+m
-
-## Schedule
-
 ```{r}
 schedule <- data.frame(time = c("2:00-2:15",
                                 "2:15-2:30",
@@ -65,8 +37,52 @@ schedule <- data.frame(time = c("2:00-2:15",
 
 schedule
 ```
+## Jake
 
-## Get to RStudioCloud
+
+
+## Alice
+
+Hello! I am a computational biologist that uses R to better understand disease at the molecular level. I work at Bristol Myers Squibb in Princeton, NJ.
+
+github.com/awalsh17
+
+@sciencealice
+
+## What is the Tidyverse?
+
+The tidyverse is an opinionated collection of R packages designed for data science. All packages share an underlying design philosophy, grammar, and data structures.
+
+Install the complete tidyverse with:
+
+```{r eval=FALSE, echo=TRUE}
+install.packages("tidyverse")
+```
+
+
+[https://www.tidyverse.org](https://www.tidyverse.org)
+
+## Some important intro notes!
+
+What is `%>%` ?
+
+This is the "pipe operator". It is a way to chain multiple operations together.
+
+```{r eval=FALSE, echo=TRUE}
+# Without pipe
+round(exp(diff(log(x))), 1)
+# With pipe
+x %>% log() %>%
+    diff() %>%
+    exp() %>%
+    round(1)
+```
+
+
+**keyboard shortcut = ctrl+shift+m**
+
+
+## Link to RStudioCloud
 
 LINK
 

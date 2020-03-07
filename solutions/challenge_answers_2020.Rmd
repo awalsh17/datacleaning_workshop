@@ -1,0 +1,436 @@
+---
+title: "The Data Cleaning Gauntlet"
+subtitle: "Possible Answers"
+author: "Alice M Walsh, R-Ladies Philly"
+date: "3/28/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Solutions
+
+# Challenge one - Ingest rectangular data
+
+Philadelphia Farmer's Markets 
+dataset sourced from https://www.opendataphilly.org/dataset/farmers-markets-locations/
+
+This first code chunk loads the data using base R `read.csv()`. You should see new variables appear in your Global Environment. 
+
+```{r get_data}
+data_link <- 'http://data.phl.opendata.arcgis.com/datasets/0707c1f31e2446e881d680b0a5ee54bc_0.csv'
+markets_base <- read.csv(data_link)
+```
+
+
+```{r load_packages}
+# Do you want to load some packages here? Maybe tidyverse? 
+# Here are the packages I loaded to complete the challenges! You made need more or different ones.
+
+library(stringr)
+library(lubridate)
+library(tidyverse)
+```
+
+## Compare to readr and data.table imports
+
+```{r}
+# Add code here to load the same data (data_link) with readr::read_csv
+
+markets_tidy <- read_csv(data_link) ## UNCOMMENT and FINISH THE CODE
+```
+
+```{r}
+# BONUS: try data.table::fread()
+
+markets_dt <- data.table::fread(data_link) ## UNCOMMENT and FINISH THE CODE
+```
+
+# Challenge two - Inspect your data
+
+```{r inspect}
+# Here are some useful data inspection functions!
+dim(markets_tidy)
+names(markets_tidy)
+str(markets_tidy)
+summary(markets_tidy)
+colSums(is.na(markets_tidy))
+# Using dplyr
+glimpse(markets_tidy)
+# Use lapply to check class or number of NA?
+lapply(markets_tidy, class)
+lapply(markets_tidy, function(x) sum(is.na(x)))
+
+## What is different?
+
+# + Defaults for read.csv left " ", read_csv converted to "NA"
+# + Defaults for read.csv made variables factors, read_csv made character
+# + Defaults for read.csv left white space, read_csv trimmed it
+
+## Fix any weirdness
+
+# + Column names: read.csv will convert spaces to ".", read_csv will not
+# + Coding of missing values: "na.strings" argument to read.csv
+# + Data type doesn't match: "stringsAsFactors" argument, type.convert() function
+
+```
+
+## Adjust defaults of read.csv(), read_csv()
+
+```{r reload_data}
+# Fill in the options - add stringsAsFactors, na.strings
+# ?read.csv
+
+markets_base <- read.csv(data_link, 
+                         stringsAsFactors = FALSE, 
+                         strip.white = TRUE,
+                         na.strings=c("NA","NaN", " ", ""))
+# Alternatively, use your favorite package to read in the data instead of read.csv()
+markets <- read_csv(data_link, na = c("NA","NaN", " ", ""))
+```
+
+# Challenge three
+## Clean a character column
+
+```{r clean_neighborhood}
+# Create a new data.frame called markets_clean that copies the dirty data
+markets_clean <- markets
+
+# One way
+markets_clean <- markets_clean %>% #note this saves the changes to the dataframe
+  # stringr package str_trim() - dont need if done on import
+  mutate(NEIGHBORHOOD = stringr::str_trim(NEIGHBORHOOD)) %>% 
+  # str_to_title - makes title case
+  mutate(NEIGHBORHOOD = stringr::str_to_title(NEIGHBORHOOD))
+
+# Check
+unique(markets_clean$NEIGHBORHOOD)
+# or 
+markets_clean %>% count(NEIGHBORHOOD)
+
+```
+
+Bonus: What to do with missing values (NAs)? tidyr has a useful function, `replace_na()`
+
+```{r}
+# ?replace_na
+# Try out replace_na to replace NAs in ACCEPT_SNAP_ACCESS, ACCEPT_FMNP, ACCEPT_PHILLY_FOOD_BUCKS_ with "N"
+
+markets_clean <- markets_clean %>%   
+  replace_na(list(ACCEPT_SNAP_ACCESS = "N",
+                  ACCEPT_FMNP = "N",
+                  ACCEPT_PHILLY_FOOD_BUCKS_ = "N"))
+```
+
+## Clean by creating new variables
+
+```{r clean_months_one}
+# This is one way... 
+
+# Create a factor with the FULL months in order (will be useful later)
+# base R has `month.name`,`month.abb`
+all_months <- factor(month.name, levels= month.name)
+# do same for abvreviations
+all_months_abb <- factor(month.abb, levels= month.abb)
+
+# This cleanup with pipes (%>%) does several operations
+markets_clean <- markets_clean %>% 
+  # Manual clean-up
+  mutate(MONTHS = sub("TBD|Late |end of |Mid-|mid-|middle of |,","", MONTHS)) %>% 
+  mutate(MONTHS = sub("Thanksgiving","November", MONTHS)) %>% 
+  # Change all to uppercase
+  mutate(MONTHS = str_to_title(MONTHS)) 
+# Search for any months present in MONTHS - convert to numbers and then find min and max
+markets_clean$month_n_min <- sapply(markets_clean$MONTHS,
+      function(m) min(as.numeric(all_months[str_detect(m, as.character(all_months))]),
+                      as.numeric(all_months_abb[str_detect(m, as.character(all_months_abb))])))
+
+markets_clean$month_n_max <- sapply(markets_clean$MONTHS,
+      function(m) max(as.numeric(all_months[str_detect(m, as.character(all_months))]),
+                    as.numeric(all_months_abb[str_detect(m, as.character(all_months_abb))])))
+
+markets_clean <- markets_clean %>% 
+  # Special case of year round - make start 1 (Jan), end 12 (Dec)
+  mutate(month_n_min = if_else(grepl("Round",MONTHS), 1, month_n_min),
+         month_n_max = if_else(grepl("Round",MONTHS), 12, month_n_max)) %>% 
+  # Replace Inf, -Inf with NA
+  mutate_at(vars(starts_with("month_n")), list(~na_if(abs(.), Inf)))
+
+# The last line above is pretty hard to understand, 
+# here is another way (non-tidyverse) to do it
+# markets$month_n_min[is.infinite(markets$month_n_min)] <- NA
+# markets$month_n_max[is.infinite(markets$month_n_max)] <- NA
+
+```
+
+```{r plot_by_month}
+
+# Create a summarization based on the numeric start and end months
+
+by_month <- data.frame(month = all_months,
+                       number = sapply(1:12,
+                                function(x) 
+                                sum(markets_clean$month_n_min <= x & markets_clean$month_n_max >= x, 
+                                    na.rm = TRUE)))
+# Code to plot markets by month
+ggplot(by_month, aes(x = month, y = number)) +
+  geom_col()
+```
+
+
+```{r clean_months_two, eval=FALSE}
+# Here is a different way to approach challenge four
+markets2 <- markets
+# Uses lubridate
+unique(markets2$MONTHS)
+
+# split by hyphen or dash...
+markets2$START_DATE <- str_split_fixed(markets2$MONTHS, "\\p{Pd}", n = 2)[,1]
+markets2$END_DATE <- str_split_fixed(markets2$MONTHS, "\\p{Pd}", n = 2)[,2]
+
+# for "year round", start date is January and end date is December
+year_round_index <- grepl("year round", markets2$MONTHS, ignore.case = TRUE)
+markets2$START_DATE[year_round_index] = "2018-01-01" # year required for lubridate so using 2018, is there a better way?
+markets2$END_DATE[year_round_index] = "2018-12-01"
+
+# grep for months within text before first hyphen/dash
+# if I had more time could make this a loop through abbreviated months of the year?
+unique(markets2$START_DATE)
+january_index <- grepl("January", markets2$START_DATE, ignore.case = TRUE)
+markets2$START_DATE[january_index] = "2018-04-01"
+april_index <- grepl("April", markets2$START_DATE, ignore.case = TRUE)
+markets2$START_DATE[april_index] = "2018-04-01"
+may_index <- grepl("May", markets2$START_DATE, ignore.case = TRUE)
+markets2$START_DATE[may_index] = "2018-05-01"
+june_index <- grepl("June", markets2$START_DATE, ignore.case = TRUE)
+markets2$START_DATE[june_index] = "2018-06-01"
+july_index <- grepl("July", markets2$START_DATE, ignore.case = TRUE)
+markets2$START_DATE[july_index] = "2018-07-01"
+
+
+# grep for months within text after first hyphen/dash...
+unique(markets2$END_DATE)
+aug_index <- grepl("Aug", markets2$END_DATE, ignore.case = TRUE)
+markets2$END_DATE[aug_index] = "2018-08-01"
+sept_index <- grepl("Sept", markets2$END_DATE, ignore.case = TRUE)
+markets2$END_DATE[sept_index] = "2018-09-01"
+oct_index <- grepl("Oct", markets2$END_DATE, ignore.case = TRUE)
+markets2$END_DATE[oct_index] = "2018-10-01"
+nov_index <- grepl("Nov|Thanksgiving", markets2$END_DATE, ignore.case = TRUE)
+markets2$END_DATE[nov_index] = "2018-11-01"
+
+# check start and end dates
+unique(markets2$START_DATE)
+unique(markets2$END_DATE)
+
+
+# We have messed up some months...
+dplyr::select(markets2, MONTHS, START_DATE, END_DATE) %>% slice(47)
+
+
+# use lubridate to create variable for date interval the market is open
+markets2$INT_OPEN <- interval(markets2$START_DATE, markets2$END_DATE)
+# Remove any NA in INT_OPEN - just have year round
+markets2$INT_OPEN[is.na(markets2$INT_OPEN)] <- interval("2018-01-01", "2018-12-01")
+# I was trying to find a way of plotting the interval directly, but didn't find anything
+
+# build data frame with row for each month, first col = month number, second col = num markets open, third col = iso date for first of month (2018)
+# sum() is counting the number of rows for which the specified date is within the date interval
+
+markets_open_count <- as.data.frame(
+  rbind(
+    "01" = c(01, sum(
+      ymd("2018-01-01") %within% markets2$INT_OPEN == TRUE
+    ), "2018-01-01"),
+    "02" =  c(02, sum(
+      ymd("2018-02-01") %within% markets2$INT_OPEN == TRUE
+    ), "2018-02-01"),
+    "03" =  c(03, sum(
+      ymd("2018-03-01") %within% markets2$INT_OPEN == TRUE
+    ), "2018-03-01"),
+    "04" =  c(04, sum(
+      ymd("2018-04-01") %within% markets2$INT_OPEN == TRUE
+    ), "2018-04-01"),
+    "05" =  c(05, sum(
+      ymd("2018-05-01") %within% markets2$INT_OPEN == TRUE
+    ), "2018-05-01"),
+    "06" =  c(06, sum(
+      ymd("2018-06-01") %within% markets2$INT_OPEN == TRUE
+    ), "2018-06-01"),
+    "07" =  c(07, sum(
+      ymd("2018-07-01") %within% markets2$INT_OPEN == TRUE
+    ), "2018-07-01"),
+    "08" =  c(08, sum(
+      ymd("2018-08-01") %within% markets2$INT_OPEN == TRUE
+    ), "2018-08-01"),
+    "09" =  c(09, sum(
+      ymd("2018-09-01") %within% markets2$INT_OPEN == TRUE
+    ), "2018-09-01"),
+    "10" =  c(10, sum(
+      ymd("2018-10-01") %within% markets2$INT_OPEN == TRUE
+    ), "2018-10-01"),
+    "11" =  c(11, sum(
+      ymd("2018-11-01") %within% markets2$INT_OPEN == TRUE
+    ), "2018-11-01"),
+    "12" =  c(12, sum(
+      ymd("2018-12-01") %within% markets2$INT_OPEN == TRUE
+    ), "2018-12-01")
+  )
+)
+
+colnames(markets_open_count) <- c("month", "count", "date")
+markets_open_count$month <- as.factor(markets_open_count$month)
+markets_open_count$count <- as.numeric(as.character(markets_open_count$count))
+markets_open_count
+```
+
+
+```{r plot_by_month_two, eval=FALSE}
+# Code to plot markets by month - 
+
+ggplot(markets_open_count, aes(x = month(date, label = TRUE), y = count)) +
+  geom_col() +
+  scale_x_discrete(limits = month.abb)
+```
+
+# Challenge four
+
+```{r load_json}
+library(jsonlite)
+
+wawa_json <- jsonlite::fromJSON(here::here('exercises','wawa.json'))
+class(wawa_json)
+```
+
+```{r}
+dplyr::glimpse(wawa_json$locations)
+```
+
+```{r flatten_json}
+# One way
+flat_wawa <- wawa_json$locations
+
+# amenitites can get added with simple jsonlite::flatten()
+# dim(flat_wawa$amenities)
+flat_wawa <- flatten(flat_wawa)
+
+# addresses has two rows x 6 cols per row, can use tidyr::unnest()
+# dim(flat_wawa$addresses[[1]])
+flat_wawa <- unnest(flat_wawa, cols = addresses)
+
+# fuelTypes has data frame for locations with gas
+#   description price currency
+# 1    Unleaded 2.419      USD
+# 2        Plus 2.739      USD
+# 3     Premium 2.879      USD
+# 4      Diesel 2.999      USD
+# 5       Super 2.919      USD
+
+flat_wawa <- unnest(flat_wawa, cols = fuelTypes, keep_empty = TRUE)
+
+dim(flat_wawa)
+```
+
+
+# Challenge five - pivot the "old way"
+
+```{r load_widedata}
+zillow_source <- "http://files.zillowstatic.com/research/public/Zip/Zip_MedianListingPrice_AllHomes.csv"
+zillow_wide <- read_csv(zillow_source)
+dim(zillow_wide)
+```
+
+The data is 10,000+ rows and 120+ columns. Let's filter to just keep Philadelphia data:
+
+```{r filter_zillow}
+# This code uses filter from dplyr package - there are other ways you could do this
+zillow_wide <- filter(zillow_wide, City == "Philadelphia")
+head(zillow_wide[,c(1,2,7:10)])
+```
+
+This data is wide - there are columns for every month with home prices (e.g. "2010-01" and "2016-08"). Instead, we want to have one column with the prices and another with the month and year. How can we convert from wide to long?
+
+This is roughly what I want `zillow_long` to look like:
+```{r dummy_df}
+fake_zillow_long <- tibble(RegionName = c(19143, 19143, 19143, 19143, 19143),
+                               City = c("Philadelphia","Philadelphia","Philadelphia","Philadelphia","Philadelphia"),
+                               year = c(2010,2010,2010,2010,2010),
+                               month = c(1,2,3,4,5),
+                               price = c(79450, 77000, 83500, 79450, 79900))
+  
+fake_zillow_long
+```
+
+
+```{r reshape_zillow_old}
+# Create a new data frame, zillow_long, that contains reshaped data
+# Try using the tidyr function, gather()
+# ?gather
+
+# One solution (nice b/c dont need to know all col names)
+zillow_long <- gather(zillow_wide, 
+                      key = "year-month", #bad col name!
+                      value = "price",
+                      starts_with("20")) %>% 
+  separate(`year-month`, 
+           into = c("year","month"))
+
+# Basically the same but specify column range instead of starts_with
+# also dont autofill NA
+zillow_long <- gather(zillow_wide, 
+                      key = "year-month", #bad col name!
+                      value = "price",
+                      `2010-01`:`2019-12`,
+                      na.rm = TRUE) %>% 
+  separate(`year-month`, 
+           into = c("year","month"), 
+           convert = TRUE) #if you want new year and month cols to be numeric
+```
+
+```{r plot_zillow}
+# Now we can plot the prices over time for each Philadelphia RegionName (zip code)
+# Here is some example code you can modify to fit your dataset or change to make prettier
+
+ggplot(zillow_long, aes(x = month, y = price, group = RegionName)) +
+  geom_line() +
+  facet_wrap(~year)
+```
+
+# Challenge six - pivot the "new way"
+
+```{r reshape_zillow_new}
+# Create a new data frame, zillow_long, that contains reshaped data
+# ?pivot_longer
+
+# One way
+zillow_long <- pivot_longer(zillow_wide, 
+                      cols = starts_with("20"),
+                      names_to = "year-month",
+                      values_to = "price") %>% 
+  separate(`year-month`, 
+           into = c("year","month"))
+
+# With some other options
+zillow_long <- pivot_longer(zillow_wide, 
+                      cols = starts_with("20"),
+                      names_to = "year-month",
+                      values_to = "price",
+                      values_drop_na = TRUE) %>% 
+  separate(`year-month`, 
+           into = c("year","month"))
+```
+
+```{r back_to_wide}
+# Create a new data frame, zillow_long, that contains reshaped data
+# ?pivot_wider
+
+# Modify below
+zillow_wide_2 <- pivot_wider(zillow_long,
+                      names_from = "month",
+                      values_from = "price",
+                      names_prefix = "price_")
+```
+
+

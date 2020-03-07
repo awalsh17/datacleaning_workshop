@@ -1,0 +1,90 @@
+---
+title: "Untitled"
+author: "Alice Walsh"
+date: "3/2/2020"
+output: 
+  powerpoint_presentation:
+    reference_doc: reference.pptx
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Backups/Reference slides
+
+## Getting the @#$@! Data into R
+
+1. Best case scenario - Rds file
+
+```{r eval=FALSE, echo=TRUE}
+mydata <- readRDS('mydata.Rds')
+```
+
+## Getting the @#$@! Data into R
+
+2. Still good scenario - flat text file (csv, tab-delimited)
+
+```{r eval=FALSE, echo=TRUE}
+mydata <- read.csv('mydata.csv')
+```
+
+
+
+Variations on base R read.csv():
+
++ `readr::read_csv()` 
++ `data.table::fread()`
+
+## Getting the @#$@! Data into R
+
+### What's the difference?   
+
++ stringsAsFactors
++ "bad" column names
++ others?
+
+## Getting the @#$@! Data into R
+
+### Other data sources
+
++ database (local or remote)
++ JSON
++ xml
+
+### At the end of the day, we usually want a data frame!!
+
+## First challenge - load our data
+
+Dataset source, [opendataphilly](https://www.opendataphilly.org/dataset/farmers-markets-locations/resource/d23195c1-b7ce-4ae0-a81c-51753d096c6f)
+
+```{r warning=FALSE}
+library(tidyverse)
+```
+
+```{r echo=TRUE}
+markets_tidy <- readr::read_csv("../exercises/Philadelphia_Farmers_Markets.csv", )
+dim(markets_tidy)
+
+markets_base <- read.csv("../exercises/Philadelphia_Farmers_Markets.csv")
+dim(markets_base)
+```
+
+## What is different?
+
+Let's use the glimpse function from dplyr
+```{r}
+glimpse(markets_base)
+glimpse(markets_tidy)
+```
+
+## What is different?
+
++ Defaults for read.csv left " ", read_csv converted to "NA"
++ Defaults for read.csv made variables factors, read_csv made character
+
+## Fix any weirdness
+
++ Column names: read.csv will convert spaces to ".", read_csv will not
++ Coding of missing values: "na.strings" argument to read.csv
++ Data type doesn't match: "stringsAsFactors" argument, type.convert() function

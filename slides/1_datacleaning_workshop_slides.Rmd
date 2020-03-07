@@ -27,8 +27,8 @@ In this workshop, participants will learn how to use R packages to ingest, clean
 
 ## The data value chain
 
-![](data_value_chain_figure.png){width=60%}
-Adapted from "An introduction to data cleaning in R" by Edwin de Jonge and Mark van der Loo
+![Adapted from "An introduction to data cleaning in R" by Edwin de Jonge and Mark van der Loo](data_value_chain_figure.png){width=90%}
+
 
 ## Useful packages
 
@@ -54,9 +54,41 @@ There are three interrelated rules which make a dataset tidy:
 
 Usually datasets are organized to make *data entry* easy, but not to make *data analysis* easy.
 
-## Let's take on some challenges
+## Example non-tidy data
+https://r4ds.had.co.nz/tidy-data.html
 
-Instructions and background on the data
+```{r eval=FALSE}
+table2
+#> # A tibble: 12 x 4
+#>   country      year type           count
+#>   <chr>       <int> <chr>          <int>
+#> 1 Afghanistan  1999 cases            745
+#> 2 Afghanistan  1999 population  19987071
+#> 3 Afghanistan  2000 cases           2666
+#> 4 Afghanistan  2000 population  20595360
+#> 5 Brazil       1999 cases          37737
+#> 6 Brazil       1999 population 172006362
+#> # … with 6 more rows
+```
+
+
+## Example tidy data
+https://r4ds.had.co.nz/tidy-data.html
+
+```{r eval=FALSE}
+table1
+#> # A tibble: 6 x 4
+#>   country      year  cases population
+#>   <chr>       <int>  <int>      <int>
+#> 1 Afghanistan  1999    745   19987071
+#> 2 Afghanistan  2000   2666   20595360
+#> 3 Brazil       1999  37737  172006362
+#> 4 Brazil       2000  80488  174504898
+#> 5 China        1999 212258 1272915272
+#> 6 China        2000 213766 1280428583
+```
+
+## Let's take on some challenges
 
 1. Ingest rectangular data - readr vs. base R vs. data.table
 2. Inspect the data - dplyr, skimr, DataExplorer
@@ -65,13 +97,21 @@ Instructions and background on the data
 5. Pivoting - RIP to tidyr::gather(), tidyr::spread()
 6. Pivoting - new tidyr `pivot_` functions
 
+## Go to RStudioCloud
+
+LINK HERE
+
+Go to exercises/challenge.Rmd
+
+We will work on three Philadelphia datasets: locations of farmers markets, locations of Wawas, and real estate prices
+
 ## Time to share
 
 ![](data_cleaning_r.png){width=60%}
 
 ## How to ask better questions
 
-a `reprex` is a *repr*oducible *ex*ample.
+a reprex is a *repr*oducible *ex*ample.
 
 https://github.com/tidyverse/reprex
 
