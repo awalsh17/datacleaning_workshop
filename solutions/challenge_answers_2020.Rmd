@@ -52,30 +52,53 @@ markets_dt <- data.table::fread(data_link) ## UNCOMMENT and FINISH THE CODE
 
 ```{r inspect}
 # Here are some useful data inspection functions!
-dim(markets_tidy)
-names(markets_tidy)
-str(markets_tidy)
-summary(markets_tidy)
-colSums(is.na(markets_tidy))
-# Using dplyr
-glimpse(markets_tidy)
+
+
 # Use lapply to check class or number of NA?
-lapply(markets_tidy, class)
-lapply(markets_tidy, function(x) sum(is.na(x)))
-
-## What is different?
-
-# + Defaults for read.csv left " ", read_csv converted to "NA"
-# + Defaults for read.csv made variables factors, read_csv made character
-# + Defaults for read.csv left white space, read_csv trimmed it
-
-## Fix any weirdness
-
-# + Column names: read.csv will convert spaces to ".", read_csv will not
-# + Coding of missing values: "na.strings" argument to read.csv
-# + Data type doesn't match: "stringsAsFactors" argument, type.convert() function
 
 ```
+
+Questions:
+
+* What is the dimension of the data? 
+```{r}
+dim(markets_tidy)
+```
+
+* What are the variable/column names?
+```{r}
+names(markets_tidy)
+```
+
+* What data type are the variable/columns?
+```{r}
+# Three ways
+str(markets_tidy)
+summary(markets_tidy)
+lapply(markets_tidy, class)
+# Using dplyr
+glimpse(markets_tidy)
+```
+
+* How many NA's are there per variable?
+```{r}
+colSums(is.na(markets_tidy))
+lapply(markets_tidy, function(x) sum(is.na(x)))
+# I recommend skimr package!
+skimr::skim(markets_tidy)
+```
+
+* Is the data "tidy"?
+No. Each variable does not have its own column and each value does not have its own cell.
+
+* What is different about data imported by read.csv and read_csv??
+
++ Defaults for read.csv left " ", read_csv converted to "NA"
++ Defaults for read.csv made variables factors, read_csv made character
++ Defaults for read.csv left white space, read_csv trimmed it
++ Column names: read.csv will convert spaces to ".", read_csv will not
++ Coding of missing values: "na.strings" argument to read.csv
++ Data type doesn't match: "stringsAsFactors" argument, type.convert() function
 
 ## Adjust defaults of read.csv(), read_csv()
 
@@ -99,8 +122,8 @@ markets <- read_csv(data_link, na = c("NA","NaN", " ", ""))
 markets_clean <- markets
 
 # One way
-markets_clean <- markets_clean %>% #note this saves the changes to the dataframe
-  # stringr package str_trim() - dont need if done on import
+markets_clean <- markets_clean %>% 
+  # stringr package str_trim() - don't need if done on import (read_csv)
   mutate(NEIGHBORHOOD = stringr::str_trim(NEIGHBORHOOD)) %>% 
   # str_to_title - makes title case
   mutate(NEIGHBORHOOD = stringr::str_to_title(NEIGHBORHOOD))
@@ -115,7 +138,6 @@ markets_clean %>% count(NEIGHBORHOOD)
 Bonus: What to do with missing values (NAs)? tidyr has a useful function, `replace_na()`
 
 ```{r}
-# ?replace_na
 # Try out replace_na to replace NAs in ACCEPT_SNAP_ACCESS, ACCEPT_FMNP, ACCEPT_PHILLY_FOOD_BUCKS_ with "N"
 
 markets_clean <- markets_clean %>%   
@@ -141,28 +163,39 @@ markets_clean <- markets_clean %>%
   mutate(MONTHS = sub("TBD|Late |end of |Mid-|mid-|middle of |,","", MONTHS)) %>% 
   mutate(MONTHS = sub("Thanksgiving","November", MONTHS)) %>% 
   # Change all to uppercase
-  mutate(MONTHS = str_to_title(MONTHS)) 
-# Search for any months present in MONTHS - convert to numbers and then find min and max
-markets_clean$month_n_min <- sapply(markets_clean$MONTHS,
-      function(m) min(as.numeric(all_months[str_detect(m, as.character(all_months))]),
-                      as.numeric(all_months_abb[str_detect(m, as.character(all_months_abb))])))
-
-markets_clean$month_n_max <- sapply(markets_clean$MONTHS,
-      function(m) max(as.numeric(all_months[str_detect(m, as.character(all_months))]),
-                    as.numeric(all_months_abb[str_detect(m, as.character(all_months_abb))])))
-
-markets_clean <- markets_clean %>% 
+  mutate(MONTHS = str_to_title(MONTHS)) %>% 
+  # Search for any months present in MONTHS (abbreviation finds both full and short)
+  mutate(months_abb_vector = list(as.character(all_months_abb)),
+         # Convert to numeric representation (1-12) 
+         months_abb_n = map2(months_abb_vector, MONTHS, 
+           function(m,y) as.numeric(all_months_abb[str_detect(y, as.character(m))])),
+         # Then find min and max
+         month_n_min = map_dbl(months_abb_n, function(x) min(x, na.rm = T)),
+         month_n_max = map_dbl(months_abb_n, function(x) max(x, na.rm = T))) %>% 
   # Special case of year round - make start 1 (Jan), end 12 (Dec)
   mutate(month_n_min = if_else(grepl("Round",MONTHS), 1, month_n_min),
          month_n_max = if_else(grepl("Round",MONTHS), 12, month_n_max)) %>% 
   # Replace Inf, -Inf with NA
   mutate_at(vars(starts_with("month_n")), list(~na_if(abs(.), Inf)))
+    
+# The last line above "mutate_at" is pretty hard to understand, 
+# here is another way (non-tidyverse) to do it:
+  # markets$month_n_min[is.infinite(markets$month_n_min)] <- NA
+  # markets$month_n_max[is.infinite(markets$month_n_max)] <- NA
 
-# The last line above is pretty hard to understand, 
-# here is another way (non-tidyverse) to do it
-# markets$month_n_min[is.infinite(markets$month_n_min)] <- NA
-# markets$month_n_max[is.infinite(markets$month_n_max)] <- NA
+# Likewise the middle chunk (map2) uses some confusing purrr
+# Here is another way to do it:  
+# Search for any months present in MONTHS
+# Convert to numeric representation (1-12) 
+# Then find min and max
+  
+# markets_clean$month_n_min <- sapply(markets_clean$MONTHS,
+#       function(m) min(as.numeric(all_months[str_detect(m, as.character(all_months))]),
+#                       as.numeric(all_months_abb[str_detect(m, as.character(all_months_abb))])))
 
+# markets_clean$month_n_max <- sapply(markets_clean$MONTHS,
+#       function(m) max(as.numeric(all_months[str_detect(m, as.character(all_months))]),
+#                     as.numeric(all_months_abb[str_detect(m, as.character(all_months_abb))])))
 ```
 
 ```{r plot_by_month}
@@ -180,11 +213,11 @@ ggplot(by_month, aes(x = month, y = number)) +
 ```
 
 
-```{r clean_months_two, eval=FALSE}
+```{r clean_months_two, eval=TRUE}
 # Here is a different way to approach challenge four
-markets2 <- markets
 # Uses lubridate
-unique(markets2$MONTHS)
+markets2 <- markets
+# unique(markets2$MONTHS)
 
 # split by hyphen or dash...
 markets2$START_DATE <- str_split_fixed(markets2$MONTHS, "\\p{Pd}", n = 2)[,1]
@@ -197,7 +230,7 @@ markets2$END_DATE[year_round_index] = "2018-12-01"
 
 # grep for months within text before first hyphen/dash
 # if I had more time could make this a loop through abbreviated months of the year?
-unique(markets2$START_DATE)
+# unique(markets2$START_DATE)
 january_index <- grepl("January", markets2$START_DATE, ignore.case = TRUE)
 markets2$START_DATE[january_index] = "2018-04-01"
 april_index <- grepl("April", markets2$START_DATE, ignore.case = TRUE)
@@ -211,7 +244,7 @@ markets2$START_DATE[july_index] = "2018-07-01"
 
 
 # grep for months within text after first hyphen/dash...
-unique(markets2$END_DATE)
+# unique(markets2$END_DATE)
 aug_index <- grepl("Aug", markets2$END_DATE, ignore.case = TRUE)
 markets2$END_DATE[aug_index] = "2018-08-01"
 sept_index <- grepl("Sept", markets2$END_DATE, ignore.case = TRUE)
@@ -287,7 +320,7 @@ markets_open_count
 ```
 
 
-```{r plot_by_month_two, eval=FALSE}
+```{r plot_by_month_two, eval=TRUE}
 # Code to plot markets by month - 
 
 ggplot(markets_open_count, aes(x = month(date, label = TRUE), y = count)) +
